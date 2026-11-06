@@ -1,0 +1,13 @@
+{
+  "name": "ccmermaid",
+  "owner": {
+    "name": "weichieh0204"
+  },
+  "plugins": [
+    {
+      "name": "ccmermaid",
+      "source": "./",
+      "description": "Mermaid diagrams as colored text art in Claude Code replies"
+    }
+  ]
+}

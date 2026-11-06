@@ -1,0 +1,18 @@
+{
+  "name": "ccmermaid",
+  "version": "0.2.0",
+  "description": "Draws ```mermaid diagrams in Claude Code replies as colored text art (flowchart, gitGraph, sequenceDiagram, stateDiagram, gantt, pie, mindmap, timeline), with ⧉ source and ⧉ art copy buttons.",
+  "author": {
+    "name": "weichieh0204"
+  },
+  "homepage": "https://github.com/weichieh0204/ccmermaid",
+  "repository": "https://github.com/weichieh0204/ccmermaid",
+  "license": "MIT",
+  "keywords": [
+    "mermaid",
+    "diagram",
+    "terminal",
+    "claude-code",
+    "mod"
+  ]
+}

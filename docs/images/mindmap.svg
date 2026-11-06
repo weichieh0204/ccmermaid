@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="171" height="164" viewBox="0 0 171 164">
+<rect width="100%" height="100%" rx="8" fill="#1e1e2e"/>
+<g font-family="'DejaVu Sans Mono','Menlo','Consolas','Noto Sans Mono CJK TC','Microsoft JhengHei',monospace" font-size="14" xml:space="preserve">
+<text x="14.0" y="28" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#f9e2af">◉</text>
+<text x="30.8" y="28" textLength="75.6" lengthAdjust="spacingAndGlyphs" fill="#f9e2af">ccmermaid</text>
+<text x="14.0" y="45" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">├─</text>
+<text x="39.2" y="45" textLength="67.2" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">Diagrams</text>
+<text x="14.0" y="62" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">│</text>
+<text x="39.2" y="62" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">├─</text>
+<text x="64.4" y="62" textLength="75.6" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">flowchart</text>
+<text x="14.0" y="79" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">│</text>
+<text x="39.2" y="79" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">├─</text>
+<text x="64.4" y="79" textLength="67.2" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">sequence</text>
+<text x="14.0" y="96" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">│</text>
+<text x="39.2" y="96" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">└─</text>
+<text x="64.4" y="96" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">gantt</text>
+<text x="14.0" y="113" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">└─</text>
+<text x="39.2" y="113" textLength="58.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">Buttons</text>
+<text x="39.2" y="130" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">├─</text>
+<text x="64.4" y="130" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">copy</text>
+<text x="106.4" y="130" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">source</text>
+<text x="39.2" y="147" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">└─</text>
+<text x="64.4" y="147" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">copy</text>
+<text x="106.4" y="147" textLength="25.2" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">art</text>
+</g></svg>
