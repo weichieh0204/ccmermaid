@@ -235,7 +235,7 @@ claude --plugin-dir .
 
 ## 致謝
 
-靈感來自 Nahum Litvin 的 [prismantis](https://github.com/NahumLitvin/prismantis)，那是一個幫整個回覆上色換主題的 Claude Code mod，也會畫 mermaid。ccmermaid 是另外自己寫的，只做畫 mermaid 這件事，沒有用到 prismantis 的程式碼。
+靈感來自 Nahum Litvin 的 [prismantis](https://github.com/NahumLitvin/prismantis)，那是一個幫整個回覆上色換主題的 Claude Code mod，也會畫 mermaid。ccmermaid 只做畫 mermaid 這件事。解析和排版的程式是自己從頭寫的（prismantis 用的是它附帶的 mermaid 繪圖函式庫），**⧉ source** / **⧉ art** 兩個按鈕和複製功能的測試寫法，則是參考 prismantis。
 
 ## 授權
 

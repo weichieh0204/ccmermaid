@@ -235,7 +235,7 @@ The code is in `hooks/`: `mermaid.ts` finds the mermaid blocks and lays out flow
 
 ## Credits
 
-Inspired by [prismantis](https://github.com/NahumLitvin/prismantis) by Nahum Litvin, a Claude Code mod that themes whole replies, mermaid diagrams included. ccmermaid is a separate, smaller implementation that only draws mermaid diagrams, and shares no code with prismantis.
+Inspired by [prismantis](https://github.com/NahumLitvin/prismantis) by Nahum Litvin, a Claude Code mod that themes whole replies, mermaid diagrams included. ccmermaid only draws mermaid diagrams. Its parsers and layout are written from scratch (prismantis uses a bundled mermaid renderer), while the **⧉ source** / **⧉ art** buttons and the style of the copy tests follow prismantis.
 
 ## License
 
