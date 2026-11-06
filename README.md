@@ -225,13 +225,22 @@ timeline
 
 ## Develop
 
-```
-claude plugin validate .
-claude plugin test .
-claude --plugin-dir .
-```
+For changing the mod itself. Run these in the repository folder:
 
-The code is in `hooks/`: `mermaid.ts` finds the mermaid blocks and lays out flowcharts, `gitgraph.ts` and `extra.ts` draw the other types, and `register.tsx` holds the `ui.render` hook and the copy buttons.
+| Command | What it does |
+| --- | --- |
+| `claude plugin validate .` | checks that the mod's files are in the right format |
+| `claude plugin test .` | runs the tests in `hooks/register.test.tsx` |
+| `claude --plugin-dir .` | starts Claude Code with the mod loaded from this folder, so you can try a change without installing it |
+
+The code is in `hooks/`:
+
+| File | Job |
+| --- | --- |
+| `mermaid.ts` | finds the mermaid blocks in a reply and lays out flowcharts |
+| `gitgraph.ts` | draws gitGraph |
+| `extra.ts` | draws sequenceDiagram, stateDiagram, gantt, pie, mindmap and timeline |
+| `register.tsx` | the `ui.render` hook that swaps the code block for the drawing, and the two copy buttons |
 
 ## Credits
 

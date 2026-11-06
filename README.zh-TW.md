@@ -225,13 +225,22 @@ timeline
 
 ## 開發
 
-```
-claude plugin validate .
-claude plugin test .
-claude --plugin-dir .
-```
+給想改這個 mod 本身的人。在 repo 資料夾裡執行：
 
-程式都在 `hooks/`。`mermaid.ts` 找出 mermaid 區塊並排流程圖，`gitgraph.ts` 和 `extra.ts` 畫其他類型，`register.tsx` 是 `ui.render` hook 和複製按鈕。
+| 指令 | 做什麼 |
+| --- | --- |
+| `claude plugin validate .` | 檢查 mod 的檔案格式對不對 |
+| `claude plugin test .` | 跑 `hooks/register.test.tsx` 裡的測試 |
+| `claude --plugin-dir .` | 開一個直接載入這個資料夾的 Claude Code，不用安裝就能試改過的版本 |
+
+程式都在 `hooks/`：
+
+| 檔案 | 負責 |
+| --- | --- |
+| `mermaid.ts` | 找出回覆裡的 mermaid 區塊，並排流程圖 |
+| `gitgraph.ts` | 畫 gitGraph |
+| `extra.ts` | 畫 sequenceDiagram、stateDiagram、gantt、pie、mindmap、timeline |
+| `register.tsx` | `ui.render` hook，把程式碼區塊換成畫好的圖，還有兩個複製按鈕 |
 
 ## 致謝
 
