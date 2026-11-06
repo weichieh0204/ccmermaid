@@ -55,13 +55,20 @@ Every diagram has two buttons above its top right corner. Click one, and a short
 Each diagram below is what the mod draws in the terminal. Open **Source** to see the mermaid that made it.
 
 <table>
-<tr>
-<td width="50%" valign="top">
+<tr><td width="50%" valign="top">
 
 **sequenceDiagram**
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/sequence-dark.svg"><img src="docs/images/sequence-light.svg" alt="sequenceDiagram drawn by ccmermaid"></picture>
 
+</td><td width="50%" valign="top">
+
+**stateDiagram-v2**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/state-dark.svg"><img src="docs/images/state-light.svg" alt="stateDiagram-v2 drawn by ccmermaid"></picture>
+
+</td></tr>
+<tr><td valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -80,13 +87,7 @@ sequenceDiagram
 ```
 
 </details>
-</td>
-<td width="50%" valign="top">
-
-**stateDiagram-v2**
-
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/state-dark.svg"><img src="docs/images/state-light.svg" alt="stateDiagram-v2 drawn by ccmermaid"></picture>
-
+</td><td valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -99,15 +100,15 @@ stateDiagram-v2
 ```
 
 </details>
-</td>
-</tr>
-<tr>
-<td colspan="2" valign="top">
+</td></tr>
+<tr><td colspan="2" valign="top">
 
 **gantt**
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/gantt-dark.svg"><img src="docs/images/gantt-light.svg" alt="gantt drawn by ccmermaid"></picture>
 
+</td></tr>
+<tr><td colspan="2" valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -123,15 +124,21 @@ gantt
 ```
 
 </details>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+</td></tr>
+<tr><td width="50%" valign="top">
 
 **gitGraph**
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/gitgraph-dark.svg"><img src="docs/images/gitgraph-light.svg" alt="gitGraph drawn by ccmermaid"></picture>
 
+</td><td width="50%" valign="top">
+
+**mindmap**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/mindmap-dark.svg"><img src="docs/images/mindmap-light.svg" alt="mindmap drawn by ccmermaid"></picture>
+
+</td></tr>
+<tr><td valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -147,13 +154,7 @@ gitGraph
 ```
 
 </details>
-</td>
-<td width="50%" valign="top">
-
-**mindmap**
-
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/mindmap-dark.svg"><img src="docs/images/mindmap-light.svg" alt="mindmap drawn by ccmermaid"></picture>
-
+</td><td valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -169,15 +170,21 @@ mindmap
 ```
 
 </details>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
+</td></tr>
+<tr><td width="50%" valign="top">
 
 **pie**
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/pie-dark.svg"><img src="docs/images/pie-light.svg" alt="pie drawn by ccmermaid"></picture>
 
+</td><td width="50%" valign="top">
+
+**timeline**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.svg"><img src="docs/images/timeline-light.svg" alt="timeline drawn by ccmermaid"></picture>
+
+</td></tr>
+<tr><td valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -188,13 +195,7 @@ pie title Disk usage
 ```
 
 </details>
-</td>
-<td width="50%" valign="top">
-
-**timeline**
-
-<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.svg"><img src="docs/images/timeline-light.svg" alt="timeline drawn by ccmermaid"></picture>
-
+</td><td valign="top">
 <details><summary>Source</summary>
 
 ```
@@ -206,8 +207,7 @@ timeline
 ```
 
 </details>
-</td>
-</tr>
+</td></tr>
 </table>
 
 ## Supported syntax
