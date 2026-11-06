@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="165" viewBox="0 0 600 165">
+<g font-family="'DejaVu Sans Mono','SFMono-Regular','Menlo','Consolas',monospace" font-size="14" xml:space="preserve">
+<text x="6.0" y="20" textLength="58.8" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">Release</text>
+<text x="73.2" y="20" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">plan</text>
+<text x="6.0" y="37" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">Build</text>
+<text x="22.8" y="54" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">Design</text>
+<text x="106.8" y="54" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">│</text>
+<rect x="115.2" y="42" width="126.0" height="13" rx="1.5" fill="#8c8fa1"/>
+<text x="22.8" y="71" textLength="75.6" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">Implement</text>
+<text x="106.8" y="71" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">│</text>
+<rect x="241.2" y="59" width="218.4" height="13" rx="1.5" fill="#1e66f5" fill-opacity="0.6"/>
+<text x="6.0" y="88" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#40a02b">Ship</text>
+<text x="22.8" y="105" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">Test</text>
+<text x="106.8" y="105" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">│</text>
+<rect x="459.6" y="93" width="84.0" height="13" rx="1.5" fill="#d20f39"/>
+<text x="22.8" y="122" textLength="58.8" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">Release</text>
+<text x="106.8" y="122" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">│</text>
+<text x="585.6" y="122" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#40a02b">◆</text>
+<text x="106.8" y="139" textLength="478.8" lengthAdjust="spacingAndGlyphs" fill="#8c8fa1">└────────────────────────────────────────────────────────</text>
+<text x="115.2" y="156" textLength="84.0" lengthAdjust="spacingAndGlyphs" fill="#8c8fa1">2026-11-01</text>
+<text x="501.6" y="156" textLength="84.0" lengthAdjust="spacingAndGlyphs" fill="#8c8fa1">2026-11-12</text>
+</g></svg>

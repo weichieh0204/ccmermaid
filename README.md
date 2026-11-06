@@ -1,11 +1,29 @@
-# ccmermaid
+<h1 align="center">ccmermaid</h1>
 
-A [Claude Code](https://claude.com/claude-code) mod that draws ` ```mermaid ` blocks in Claude's replies as colored text art, right in the terminal.
-Each diagram gets two buttons: **⧉ source** copies the mermaid code, **⧉ art** copies the drawing as plain text.
+<p align="center"><b>English</b> | <a href="README.zh-TW.md">繁體中文</a></p>
 
-Unofficial community mod, not made by Anthropic.
+<p align="center">
+  <img src="https://img.shields.io/badge/Claude%20Code-mod-d97757.svg" alt="Claude Code mod">
+  <img src="https://img.shields.io/badge/diagrams-8%20types-89b4fa.svg" alt="8 diagram types">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license">
+</p>
 
-[繁體中文說明](#繁體中文)
+<p align="center">
+  Mermaid diagrams in <a href="https://claude.com/claude-code">Claude Code</a> replies, drawn as colored text art right in the terminal.
+</p>
+
+<p align="center">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg"><img src="docs/images/hero-light.svg" alt="A Claude reply in the terminal with a flowchart drawn as colored box art, and the copy source and copy art buttons above it"></picture>
+</p>
+
+When Claude writes a ` ```mermaid ` block, Claude Code normally shows the code. ccmermaid parses it and draws the diagram instead, with boxes, arrows and colors made of plain characters, so it reads at a glance and stays text.
+
+- **8 diagram types:** flowchart, sequenceDiagram, stateDiagram-v2, gantt, gitGraph, pie, mindmap and timeline.
+- **Two copy buttons** on every diagram ([Copy buttons](#copy-buttons)).
+- **Safe fallback:** a diagram it cannot parse stays the original code block, so nothing is lost.
+- **Nothing else changes:** replies without mermaid are drawn by Claude Code as usual.
+
+This is an unofficial community mod, not made by Anthropic.
 
 ## Install
 
@@ -15,77 +33,195 @@ At the prompt of a Claude Code terminal session:
 /plugin install ccmermaid --marketplace weichieh0204/ccmermaid
 ```
 
-Answer `y` to add the marketplace, then pick a scope. From a shell:
+Answer `y` to add the marketplace, then pick a scope. The mod is active right away. From a shell:
 
 ```
 claude plugin install ccmermaid --marketplace weichieh0204/ccmermaid
 ```
 
-## Supported diagrams
+To make Claude draw diagrams more often, add a line to your `CLAUDE.md`, for example: *"When a diagram helps, draw it in a mermaid code block."*
 
-| Type | Notes |
+## Copy buttons
+
+Every diagram has two buttons above its top right corner. Click one, and a short toast confirms the copy.
+
+| Button | Copies | Use it for |
+| --- | --- | --- |
+| **⧉&nbsp;source** | the original mermaid code | pasting into GitHub, docs, or the [Mermaid Live Editor](https://mermaid.live) to get a real image |
+| **⧉&nbsp;art** | the drawing as plain text, without colors | pasting into commit messages, code comments, chats or any plain text file |
+
+## Gallery
+
+Each diagram below is what the mod draws in the terminal. Open **Source** to see the mermaid that made it.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**sequenceDiagram**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/sequence-dark.svg"><img src="docs/images/sequence-light.svg" alt="sequenceDiagram drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant W as Web
+    participant A as API
+    U->>W: click "Save"
+    W->>A: POST /items
+    loop retry
+      A-->>W: 503
+    end
+    A-->>W: 201 Created
+    W-->>U: Saved
+```
+
+</details>
+</td>
+<td width="50%" valign="top">
+
+**stateDiagram-v2**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/state-dark.svg"><img src="docs/images/state-light.svg" alt="stateDiagram-v2 drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Running: start
+    Running --> Paused: pause
+    Paused --> Running: resume
+    Running --> [*]: done
+```
+
+</details>
+</td>
+</tr>
+<tr>
+<td colspan="2" valign="top">
+
+**gantt**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/gantt-dark.svg"><img src="docs/images/gantt-light.svg" alt="gantt drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+gantt
+    title Release plan
+    dateFormat YYYY-MM-DD
+    section Build
+    Design    :done, a1, 2026-11-01, 3d
+    Implement :active, a2, after a1, 5d
+    section Ship
+    Test      :crit, 2d
+    Release   :milestone, 2026-11-12, 0d
+```
+
+</details>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**gitGraph**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/gitgraph-dark.svg"><img src="docs/images/gitgraph-light.svg" alt="gitGraph drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+gitGraph
+    commit id: "init"
+    branch feature
+    checkout feature
+    commit id: "add parser"
+    commit id: "add tests"
+    checkout main
+    commit id: "hotfix" type: HIGHLIGHT
+    merge feature tag: "v1.0"
+```
+
+</details>
+</td>
+<td width="50%" valign="top">
+
+**mindmap**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/mindmap-dark.svg"><img src="docs/images/mindmap-light.svg" alt="mindmap drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+mindmap
+  root((ccmermaid))
+    Diagrams
+      flowchart
+      sequence
+      gantt
+    Buttons
+      copy source
+      copy art
+```
+
+</details>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+**pie**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/pie-dark.svg"><img src="docs/images/pie-light.svg" alt="pie drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+pie title Disk usage
+    "Models" : 60
+    "System" : 25
+    "Free" : 15
+```
+
+</details>
+</td>
+<td width="50%" valign="top">
+
+**timeline**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/timeline-dark.svg"><img src="docs/images/timeline-light.svg" alt="timeline drawn by ccmermaid"></picture>
+
+<details><summary>Source</summary>
+
+```
+timeline
+    title Project history
+    2024 : Idea
+    2025 : First version : CJK support
+    2026 : Public release
+```
+
+</details>
+</td>
+</tr>
+</table>
+
+## Supported syntax
+
+| Type | What is drawn |
 | --- | --- |
 | `flowchart` / `graph` | `LR` and `TD` layouts, node shapes, edge labels, dotted and thick edges |
 | `sequenceDiagram` | participants, actors, aliases, `autonumber`, notes, `loop` / `alt` / `opt` blocks, self messages |
-| `stateDiagram-v2` | drawn through the flowchart layout, `[*]` start and end, transition labels, `<<choice>>` |
+| `stateDiagram-v2` | `[*]` start and end, transition labels, `<<choice>>`, laid out like a flowchart |
 | `gantt` | sections, `done` / `active` / `crit` / `milestone`, `after id`, durations, dates or `dateFormat X` |
 | `gitGraph` | branches, checkout, merge, cherry-pick, tags, `HIGHLIGHT` / `REVERSE` commits |
-| `pie` | one stacked bar plus a legend with percentages |
-| `mindmap` | indentation tree, node shapes stripped to their text |
+| `pie` | one bar split by share, with a legend of percentages and values |
+| `mindmap` | the indentation tree, node shapes reduced to their text |
 | `timeline` | periods, sections, several events per period |
-
-A diagram it cannot parse is shown as the original code block, so nothing is lost.
-
-## Examples
-
-These are what the mod draws in the terminal (exported as SVG for this page).
-
-### flowchart
-
-```mermaid
-flowchart LR
-    A[Request] --> B{Cached?}
-    B -- yes --> C[Return cache]
-    B -- no --> D[Query DB]
-    D --> E[(Save cache)]
-    E --> C
-```
-
-![flowchart](docs/images/flowchart.svg)
-
-### sequenceDiagram
-
-![sequenceDiagram](docs/images/sequence.svg)
-
-### stateDiagram-v2
-
-![stateDiagram](docs/images/state.svg)
-
-### gantt
-
-![gantt](docs/images/gantt.svg)
-
-### gitGraph
-
-![gitGraph](docs/images/gitgraph.svg)
-
-### pie
-
-![pie](docs/images/pie.svg)
-
-### mindmap
-
-![mindmap](docs/images/mindmap.svg)
-
-### timeline
-
-![timeline](docs/images/timeline.svg)
-
-## Languages
-
-Labels can be in any language. Wide characters (Chinese, Japanese, Korean, most emoji) count as two columns, so boxes and lines stay aligned.
-Right-to-left scripts (Arabic, Hebrew) are not laid out right to left.
-The mod's own text (button labels, copy toasts) is in English.
 
 ## Develop
 
@@ -95,45 +231,12 @@ claude plugin test .
 claude --plugin-dir .
 ```
 
-The code lives in `hooks/`: `mermaid.ts` (fence splitting and flowchart layout), `gitgraph.ts`, `extra.ts` (sequence, state, gantt, pie, mindmap, timeline) and `register.tsx` (the `ui.render` hook and copy buttons).
+The code is in `hooks/`: `mermaid.ts` finds the mermaid blocks and lays out flowcharts, `gitgraph.ts` and `extra.ts` draw the other types, and `register.tsx` holds the `ui.render` hook and the copy buttons.
 
 ## Credits
 
-Inspired by [prismantis](https://github.com/NahumLitvin/prismantis) by Nahum Litvin, a Claude Code mod that themes whole replies, mermaid diagrams included.
-ccmermaid is a separate, smaller implementation that only draws mermaid diagrams. It shares no code with prismantis.
+Inspired by [prismantis](https://github.com/NahumLitvin/prismantis) by Nahum Litvin, a Claude Code mod that themes whole replies, mermaid diagrams included. ccmermaid is a separate, smaller implementation that only draws mermaid diagrams, and shares no code with prismantis.
 
 ## License
 
 [MIT](LICENSE)
-
----
-
-## 繁體中文
-
-ccmermaid 是一個 Claude Code mod。Claude 回覆裡的 ` ```mermaid ` 區塊，會直接在終端機畫成彩色文字圖。
-每張圖右上角有兩個按鈕，**⧉ source** 複製 mermaid 原始碼，**⧉ art** 複製畫好的純文字圖。
-
-這是社群做的非官方 mod，不是 Anthropic 出的。
-
-### 安裝
-
-在 Claude Code 終端機的輸入框打：
-
-```
-/plugin install ccmermaid --marketplace weichieh0204/ccmermaid
-```
-
-問要不要加 marketplace 時回 `y`，再選安裝範圍。
-
-### 支援的圖
-
-`flowchart`、`sequenceDiagram`、`stateDiagram-v2`、`gantt`、`gitGraph`、`pie`、`mindmap`、`timeline`。範例圖請看上面的 [Examples](#examples)。
-看不懂的語法會照原樣顯示成程式碼區塊，不會不見。
-
-### 語言
-
-圖裡的字可以用任何語言。中文、日文、韓文算兩格寬，框線會對齊。阿拉伯文、希伯來文這類從右寫到左的文字，不會反過來排。
-
-### 致謝
-
-靈感來自 Nahum Litvin 的 [prismantis](https://github.com/NahumLitvin/prismantis)。ccmermaid 是另外自己寫的，只做畫 mermaid 這件事，沒有用到 prismantis 的程式碼。

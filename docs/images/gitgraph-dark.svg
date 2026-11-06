@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="222" height="131" viewBox="0 0 222 131">
+<g font-family="'DejaVu Sans Mono','SFMono-Regular','Menlo','Consolas',monospace" font-size="14" xml:space="preserve">
+<text x="6.0" y="20" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">●</text>
+<text x="48.0" y="20" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">init</text>
+<text x="98.4" y="20" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">main</text>
+<text x="6.0" y="37" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">├</text>
+<text x="14.4" y="37" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">─╮</text>
+<text x="6.0" y="54" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">│</text>
+<text x="22.8" y="54" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">●</text>
+<text x="48.0" y="54" textLength="25.2" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">add</text>
+<text x="81.6" y="54" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">parser</text>
+<text x="148.8" y="54" textLength="58.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">feature</text>
+<text x="6.0" y="71" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">│</text>
+<text x="22.8" y="71" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">●</text>
+<text x="48.0" y="71" textLength="25.2" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">add</text>
+<text x="81.6" y="71" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">tests</text>
+<text x="6.0" y="88" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">◆</text>
+<text x="22.8" y="88" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">│</text>
+<text x="48.0" y="88" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">hotfix</text>
+<text x="6.0" y="105" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">├</text>
+<text x="14.4" y="105" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#a6e3a1">─╯</text>
+<text x="6.0" y="122" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#89b4fa">◉</text>
+<text x="48.0" y="122" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">merge</text>
+<text x="98.4" y="122" textLength="58.8" lengthAdjust="spacingAndGlyphs" fill="#cdd6f4">feature</text>
+<text x="165.6" y="122" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#f9e2af">[v1.0]</text>
+</g></svg>

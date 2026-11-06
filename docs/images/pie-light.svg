@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="332" height="97" viewBox="0 0 332 97">
+<g font-family="'DejaVu Sans Mono','SFMono-Regular','Menlo','Consolas',monospace" font-size="14" xml:space="preserve">
+<text x="6.0" y="20" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">Disk</text>
+<text x="48.0" y="20" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">usage</text>
+<rect x="6.0" y="25" width="193.2" height="13" rx="1.5" fill="#1e66f5"/>
+<rect x="199.2" y="25" width="75.6" height="13" rx="1.5" fill="#40a02b"/>
+<rect x="274.8" y="25" width="50.4" height="13" rx="1.5" fill="#df8e1d"/>
+<text x="6.0" y="54" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">■</text>
+<text x="22.8" y="54" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">Models</text>
+<text x="90.0" y="54" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">60.0%</text>
+<text x="148.8" y="54" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#8c8fa1">60</text>
+<text x="6.0" y="71" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#40a02b">■</text>
+<text x="22.8" y="71" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">System</text>
+<text x="90.0" y="71" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">25.0%</text>
+<text x="148.8" y="71" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#8c8fa1">25</text>
+<text x="6.0" y="88" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">■</text>
+<text x="22.8" y="88" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">Free</text>
+<text x="90.0" y="88" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#4c4f69">15.0%</text>
+<text x="148.8" y="88" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#8c8fa1">15</text>
+</g></svg>

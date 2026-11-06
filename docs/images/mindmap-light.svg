@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="155" height="148" viewBox="0 0 155 148">
+<g font-family="'DejaVu Sans Mono','SFMono-Regular','Menlo','Consolas',monospace" font-size="14" xml:space="preserve">
+<text x="6.0" y="20" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">◉</text>
+<text x="22.8" y="20" textLength="75.6" lengthAdjust="spacingAndGlyphs" fill="#df8e1d">ccmermaid</text>
+<text x="6.0" y="37" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">├─</text>
+<text x="31.2" y="37" textLength="67.2" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">Diagrams</text>
+<text x="6.0" y="54" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">│</text>
+<text x="31.2" y="54" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">├─</text>
+<text x="56.4" y="54" textLength="75.6" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">flowchart</text>
+<text x="6.0" y="71" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">│</text>
+<text x="31.2" y="71" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">├─</text>
+<text x="56.4" y="71" textLength="67.2" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">sequence</text>
+<text x="6.0" y="88" textLength="8.4" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">│</text>
+<text x="31.2" y="88" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">└─</text>
+<text x="56.4" y="88" textLength="42.0" lengthAdjust="spacingAndGlyphs" fill="#1e66f5">gantt</text>
+<text x="6.0" y="105" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#40a02b">└─</text>
+<text x="31.2" y="105" textLength="58.8" lengthAdjust="spacingAndGlyphs" fill="#40a02b">Buttons</text>
+<text x="31.2" y="122" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#40a02b">├─</text>
+<text x="56.4" y="122" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#40a02b">copy</text>
+<text x="98.4" y="122" textLength="50.4" lengthAdjust="spacingAndGlyphs" fill="#40a02b">source</text>
+<text x="31.2" y="139" textLength="16.8" lengthAdjust="spacingAndGlyphs" fill="#40a02b">└─</text>
+<text x="56.4" y="139" textLength="33.6" lengthAdjust="spacingAndGlyphs" fill="#40a02b">copy</text>
+<text x="98.4" y="139" textLength="25.2" lengthAdjust="spacingAndGlyphs" fill="#40a02b">art</text>
+</g></svg>
