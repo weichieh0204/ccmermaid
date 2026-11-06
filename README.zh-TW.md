@@ -237,7 +237,7 @@ claude --plugin-dir .
 
 靈感來自 Nahum Litvin 的 [prismantis](https://github.com/NahumLitvin/prismantis)，那是一個幫整個回覆換主題的 Claude Code mod，也會畫 Mermaid 圖。
 
-ccmermaid 跟 prismantis 不同，只專心畫 Mermaid 圖。解析和排版的程式是自己從頭寫的，**⧉ source** / **⧉ art** 兩個按鈕和複製功能的測試寫法，則是改編自 prismantis。
+ccmermaid 跟 prismantis 不同，只專心畫 Mermaid 圖。解析和排版的程式是自己從頭寫的，**⧉ source** / **⧉ art** 兩個按鈕和複製功能的測試架構，則是改編自 prismantis。
 
 ## 授權
 
