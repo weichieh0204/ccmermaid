@@ -16,7 +16,7 @@
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg"><img src="docs/images/hero-light.svg" alt="A Claude reply in the terminal with a flowchart drawn as colored box art, and the copy source and copy art buttons above it"></picture>
 </p>
 
-Claude 寫出 ` ```mermaid ` 區塊時，Claude Code 原本只會顯示程式碼。ccmermaid 會解析它，改成畫出方框、箭頭和顏色，全部用一般字元組成，一眼就看得懂，而且還是文字。
+Claude 寫出 `mermaid` 程式碼區塊時，Claude Code 原本只會顯示程式碼。ccmermaid 會解析它，改成畫出方框、箭頭和顏色，全部用一般字元組成，一眼就看得懂，而且還是文字。
 
 - **8 種圖：** flowchart、sequenceDiagram、stateDiagram-v2、gantt、gitGraph、pie、mindmap、timeline。
 - **兩個複製按鈕：** 每張圖都有（見[複製按鈕](#複製按鈕)）。

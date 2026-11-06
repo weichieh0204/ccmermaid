@@ -16,7 +16,7 @@
   <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg"><img src="docs/images/hero-light.svg" alt="A Claude reply in the terminal with a flowchart drawn as colored box art, and the copy source and copy art buttons above it"></picture>
 </p>
 
-When Claude writes a ` ```mermaid ` block, Claude Code normally shows the code. ccmermaid parses it and draws the diagram instead, with boxes, arrows and colors made of plain characters, so it reads at a glance and stays text.
+When Claude writes a `mermaid` code block, Claude Code normally shows the code. ccmermaid parses it and draws the diagram instead, with boxes, arrows and colors made of plain characters, so it reads at a glance and stays text.
 
 - **8 diagram types:** flowchart, sequenceDiagram, stateDiagram-v2, gantt, gitGraph, pie, mindmap and timeline.
 - **Two copy buttons** on every diagram ([Copy buttons](#copy-buttons)).
