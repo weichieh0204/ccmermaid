@@ -233,14 +233,16 @@ For changing the mod itself. Run these in the repository folder:
 | `claude plugin test .` | runs the tests in `hooks/register.test.tsx` |
 | `claude --plugin-dir .` | starts Claude Code with the mod loaded from this folder, so you can try a change without installing it |
 
-The code is in `hooks/`:
+The code is in `hooks/`, one file per diagram type:
 
 | File | Job |
 | --- | --- |
-| `mermaid.ts` | finds the mermaid blocks in a reply and lays out flowcharts |
-| `gitgraph.ts` | draws gitGraph |
-| `extra.ts` | draws sequenceDiagram, stateDiagram, gantt, pie, mindmap and timeline |
 | `register.tsx` | the `ui.render` hook that swaps the code block for the drawing, and the two copy buttons |
+| `render.ts` | finds the mermaid blocks in a reply and sends each one to the file for its diagram type |
+| `common.ts` | shared by every diagram: character width, colors, small text helpers |
+| `diagrams/<type>.ts` | one drawer per type: `flowchart`, `state`, `sequence`, `gantt`, `gitgraph`, `pie`, `mindmap`, `timeline` |
+
+To add a diagram type, write `diagrams/<type>.ts` and add one line to the table in `render.ts`.
 
 ## Credits
 

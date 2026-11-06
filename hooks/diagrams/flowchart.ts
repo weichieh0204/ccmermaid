@@ -1,61 +1,7 @@
 // Mermaid flowchart -> colored box-drawing text. Pure functions, no I/O.
 
-export type Seg = { text: string; color?: string }
-export type Art = { lines: Seg[][]; plain: string; width: number }
-import { isGitGraph, renderGitGraph } from "./gitgraph"
-import { renderExtra, stateToFlowchart } from './extra'
-
-export type Part = { kind: 'md'; text: string } | { kind: 'mermaid'; source: string }
-
-// ---------------------------------------------------------------- split
-
-const FENCE = /^[ \t]*(`{3,}|~{3,})[ \t]*mermaid[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*\1[ \t]*$/gm
-
-export function splitMermaid(text: string): Part[] {
-  const parts: Part[] = []
-  let last = 0
-  FENCE.lastIndex = 0
-  let m: RegExpExecArray | null
-  while ((m = FENCE.exec(text)) !== null) {
-    if (m.index > last) parts.push({ kind: 'md', text: text.slice(last, m.index) })
-    parts.push({ kind: 'mermaid', source: m[2] })
-    last = m.index + m[0].length
-  }
-  if (last < text.length) parts.push({ kind: 'md', text: text.slice(last) })
-  return parts
-}
-
-// ---------------------------------------------------------------- width
-
-function cpWidth(cp: number): number {
-  if (cp === 0) return 0
-  if (cp >= 0x0300 && cp <= 0x036f) return 0
-  if (cp === 0x200b || cp === 0x200d || (cp >= 0xfe00 && cp <= 0xfe0f)) return 0
-  if (
-    (cp >= 0x1100 && cp <= 0x115f) ||
-    (cp >= 0x2e80 && cp <= 0x303e) ||
-    (cp >= 0x3041 && cp <= 0x33ff) ||
-    (cp >= 0x3400 && cp <= 0x4dbf) ||
-    (cp >= 0x4e00 && cp <= 0x9fff) ||
-    (cp >= 0xa000 && cp <= 0xa4cf) ||
-    (cp >= 0xac00 && cp <= 0xd7a3) ||
-    (cp >= 0xf900 && cp <= 0xfaff) ||
-    (cp >= 0xfe30 && cp <= 0xfe4f) ||
-    (cp >= 0xff00 && cp <= 0xff60) ||
-    (cp >= 0xffe0 && cp <= 0xffe6) ||
-    (cp >= 0x1f300 && cp <= 0x1f64f) ||
-    (cp >= 0x1f900 && cp <= 0x1f9ff) ||
-    (cp >= 0x20000 && cp <= 0x3fffd)
-  )
-    return 2
-  return 1
-}
-
-export function strWidth(s: string): number {
-  let w = 0
-  for (const ch of s) w += cpWidth(ch.codePointAt(0) ?? 0)
-  return w
-}
+import type { Art, Seg } from '../common'
+import { PALETTE, cpWidth, strWidth } from '../common'
 
 function wrapLabel(label: string, max: number): string[] {
   const out: string[] = []
@@ -301,7 +247,6 @@ export function parseFlowchart(src: string): Graph | null {
 
 // ---------------------------------------------------------------- layout
 
-const PALETTE = ['#89b4fa', '#a6e3a1', '#f9e2af', '#f5c2e7', '#94e2d5', '#fab387', '#cba6f7', '#f38ba8']
 const LINE_COLOR = '#89b4fa'
 const ARROW_COLOR = '#cba6f7'
 const LABEL_COLOR = 'text'
@@ -847,27 +792,12 @@ function renderLR(g: Graph, maxLabel: number): Art {
 
 // ---------------------------------------------------------------- entry
 
-/** Renders a mermaid flowchart or gitGraph; null when the diagram type is not supported. */
-export function renderMermaid(src: string, maxWidth = 120): Art | null {
-  if (isGitGraph(src)) {
-    try {
-      return renderGitGraph(src)
-    } catch {
-      return null
-    }
-  }
-  const extra = renderExtra(src, maxWidth)
-  if (extra !== undefined) return extra
-  const state = /^\s*(%%.*\n\s*)*stateDiagram/.test(src) ? stateToFlowchart(src) : src
-  if (!state) return null
-  const g = parseFlowchart(state)
+/** Draws flowchart / graph source; null when it does not parse. */
+export function renderFlowchart(src: string, maxWidth: number): Art | null {
+  const g = parseFlowchart(src)
   if (!g) return null
-  try {
-    const primary = g.dir === 'LR' ? renderLR(g, 24) : renderTD(g, 24)
-    if (primary.width <= maxWidth) return primary
-    const alt = g.dir === 'LR' ? renderTD(g, 16) : renderTD(g, 12)
-    return alt.width < primary.width ? alt : primary
-  } catch {
-    return null
-  }
+  const primary = g.dir === 'LR' ? renderLR(g, 24) : renderTD(g, 24)
+  if (primary.width <= maxWidth) return primary
+  const alt = g.dir === 'LR' ? renderTD(g, 16) : renderTD(g, 12)
+  return alt.width < primary.width ? alt : primary
 }

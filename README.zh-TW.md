@@ -233,14 +233,16 @@ timeline
 | `claude plugin test .` | 跑 `hooks/register.test.tsx` 裡的測試 |
 | `claude --plugin-dir .` | 開一個直接載入這個資料夾的 Claude Code，不用安裝就能試改過的版本 |
 
-程式都在 `hooks/`：
+程式都在 `hooks/`，一種圖一個檔：
 
 | 檔案 | 負責 |
 | --- | --- |
-| `mermaid.ts` | 找出回覆裡的 mermaid 區塊，並排流程圖 |
-| `gitgraph.ts` | 畫 gitGraph |
-| `extra.ts` | 畫 sequenceDiagram、stateDiagram、gantt、pie、mindmap、timeline |
 | `register.tsx` | `ui.render` hook，把程式碼區塊換成畫好的圖，還有兩個複製按鈕 |
+| `render.ts` | 找出回覆裡的 mermaid 區塊，看是哪種圖，交給對應的檔 |
+| `common.ts` | 大家共用的：字寬、顏色、小的文字工具 |
+| `diagrams/<類型>.ts` | 每種圖一個：`flowchart`、`state`、`sequence`、`gantt`、`gitgraph`、`pie`、`mindmap`、`timeline` |
+
+要加新的圖，就寫一個 `diagrams/<類型>.ts`，再到 `render.ts` 的對照表加一行。
 
 ## 致謝
 

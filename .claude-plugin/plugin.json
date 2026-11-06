@@ -1,6 +1,6 @@
 {
   "name": "ccmermaid",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Draws ```mermaid diagrams in Claude Code replies as colored text art (flowchart, gitGraph, sequenceDiagram, stateDiagram, gantt, pie, mindmap, timeline), with ⧉ source and ⧉ art copy buttons.",
   "author": {
     "name": "weichieh0204"

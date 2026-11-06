@@ -1,6 +1,6 @@
 import type { EngineInterface, Register, RenderSurface } from 'claude-code'
 
-import { renderMermaid, splitMermaid } from './mermaid'
+import { renderMermaid, splitMermaid } from './render'
 
 async function copy($: EngineInterface, surface: RenderSurface, text: string, what: string) {
   const res = await $.ui.copy({ text, surface })

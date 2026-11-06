@@ -1,9 +1,8 @@
 // Mermaid gitGraph -> colored lane drawing, oldest commit on top. Pure functions, no I/O.
 
-import type { Art, Seg } from './mermaid'
-import { strWidth } from './mermaid'
+import type { Art, Seg } from '../common'
+import { PALETTE, strWidth } from '../common'
 
-const PALETTE = ['#89b4fa', '#a6e3a1', '#f9e2af', '#f5c2e7', '#94e2d5', '#fab387', '#cba6f7', '#f38ba8']
 
 type Row =
   | { kind: 'fork'; from: number; to: number }
