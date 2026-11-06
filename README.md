@@ -242,7 +242,7 @@ The code is in `hooks/`, one file per diagram type:
 | `common.ts` | shared by every diagram: character width, colors, small text helpers |
 | `diagrams/<type>.ts` | one drawer per type: `flowchart`, `state`, `sequence`, `gantt`, `gitgraph`, `pie`, `mindmap`, `timeline` |
 
-To add a diagram type, write `diagrams/<type>.ts` and add one line to the table in `render.ts`.
+To add a diagram type, write `diagrams/<type>.ts` and add one line to the `DRAWERS` map in `render.ts`.
 
 ## Credits
 

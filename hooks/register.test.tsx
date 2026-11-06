@@ -107,3 +107,15 @@ for (const [name, src, want] of EXTRA) {
     await ui.unmount()
   })
 }
+
+test('a block named after an Object builtin is left as code', async ($, on) => {
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>engine</Text>
+  })
+  for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    const ui = await $.ui.mount({ ...MSG('terminal'), props: { text: '```mermaid\n' + name + '\n  a --> b\n```\n', isFirstOfReply: true } })
+    expect(await ui.find({ type: 'Button', key: 'art-0' })).toBeFalsy()
+    await ui.unmount()
+  }
+})

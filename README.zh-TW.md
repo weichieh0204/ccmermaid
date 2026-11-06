@@ -242,7 +242,7 @@ timeline
 | `common.ts` | 大家共用的：字寬、顏色、小的文字工具 |
 | `diagrams/<類型>.ts` | 每種圖一個：`flowchart`、`state`、`sequence`、`gantt`、`gitgraph`、`pie`、`mindmap`、`timeline` |
 
-要加新的圖，就寫一個 `diagrams/<類型>.ts`，再到 `render.ts` 的對照表加一行。
+要加新的圖，就寫一個 `diagrams/<類型>.ts`，再到 `render.ts` 的 `DRAWERS` 加一行。
 
 ## 致謝
 
