@@ -1,4 +1,5 @@
 import { expect, test } from 'claude-code/testing'
+import { renderMermaid } from './render'
 
 const TEXT = '說明如下：\n\n```mermaid\ngraph LR\n  input --> parse[parse] --> D{valid?}\n  D -- yes --> out\n```\n\n結束。'
 
@@ -118,4 +119,46 @@ test('a block named after an Object builtin is left as code', async ($, on) => {
     expect(await ui.find({ type: 'Button', key: 'art-0' })).toBeFalsy()
     await ui.unmount()
   }
+})
+
+const BACK = (dir: string) => `flowchart ${dir}
+  A[lock] --> T[track]
+  T --> R{same?}
+  R -- yes --> S[show]
+  R -- no --> H[hide]
+  H -- too long --> A`
+
+test('a back edge keeps its label and the forward label', () => {
+  for (const dir of ['LR', 'TD']) {
+    const art = renderMermaid(BACK(dir), 400)!.plain
+    expect(art).toContain('yes')
+    expect(art).toContain('no')
+    expect(art).toContain('too long')
+  }
+})
+
+test('a left-to-right back edge enters its target from below', () => {
+  const rows = renderMermaid(BACK('LR'), 400)!.plain.split('\n')
+  const lock = rows.findIndex(r => r.includes('lock'))
+  // box text row, its bottom border, then the arrow
+  expect(rows[lock + 2]).toContain('▲')
+  expect(rows[rows.length - 1]).toContain('too long')
+})
+
+test('a top-down back edge enters its target from the right', () => {
+  const rows = renderMermaid(BACK('TD'), 400)!.plain.split('\n')
+  expect(rows.find(r => r.includes('lock'))).toContain('◄')
+})
+
+test('a top-down label sits beside its line', () => {
+  const art = renderMermaid('flowchart TD\n  B{x} -- 否 --> C[aaa]\n  B -- 是 --> E[bbb]', 400)!.plain
+  expect(art).toMatch(/│ 否/)
+  expect(art).toMatch(/│ 是/)
+})
+
+test('a two-way pair stays one double-headed line', () => {
+  const art = renderMermaid('flowchart LR\n  A[a] --> B[b]\n  B --> A', 400)!.plain
+  expect(art).toContain('◄')
+  expect(art).toContain('►')
+  expect(art).not.toContain('▲')
 })

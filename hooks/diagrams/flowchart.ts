@@ -276,7 +276,10 @@ type Link = {
   isLast: boolean
 }
 
-type Layout = { layers: LNode[][]; links: Link[] }
+// an edge pointing at an earlier layer, drawn around the graph instead of through it
+type BackEdge = { from: LNode; to: LNode; style: LineStyle; label: string; head: boolean; tail: boolean }
+
+type Layout = { layers: LNode[][]; links: Link[]; backs: BackEdge[] }
 
 function straightenDummies(layers: LNode[][], chains: LNode[][], pos: (n: LNode) => number, set: (n: LNode, p: number) => void, size: (n: LNode) => number, gap: number) {
   for (const chain of chains) {
@@ -317,8 +320,15 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
     if (!state.get(id)) visit(id)
   })
 
+  // a reversed edge with a forward twin stays one double-headed line, the others become back edges
+  const pair = (a: string, b: string) => `${a}\u0000${b}`
+  const forward = new Set(edges.filter((_, k) => !reversed.has(k)).map(e => pair(e.from, e.to)))
+  const isBack = (k: number) => reversed.has(k) && !forward.has(pair(edges[k].to, edges[k].from))
+
   // longest-path layering
-  const dag = edges.map((e, k) => (reversed.has(k) ? { u: e.to, v: e.from, k } : { u: e.from, v: e.to, k }))
+  const dag = edges
+    .map((e, k) => (reversed.has(k) ? { u: e.to, v: e.from, k } : { u: e.from, v: e.to, k }))
+    .filter(d => !isBack(d.k))
   const indeg = new Map<string, number>()
   ids.forEach(id => indeg.set(id, 0))
   dag.forEach(d => indeg.set(d.v, indeg.get(d.v)! + 1))
@@ -442,7 +452,15 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
     for (let L = layers.length - 2; L >= 0; L--) sortLayer(layers[L], succs)
   }
 
-  return { layers, links, chains }
+  const backs = edges.flatMap((e, k) =>
+    isBack(k)
+      ? [{ from: lnodes.get(e.from)!, to: lnodes.get(e.to)!, style: e.style, label: e.label, head: e.head, tail: e.tail }]
+      : [],
+  )
+  // shortest span first, so longer lanes wrap around shorter ones
+  backs.sort((a, b) => a.from.layer - a.to.layer - (b.from.layer - b.to.layer))
+
+  return { layers, links, chains, backs }
 }
 
 // greedy 1-D placement along the cross axis
@@ -654,13 +672,20 @@ function sizeNodes(layers: LNode[][]) {
 // ---------------------------------------------------------------- TD
 
 function renderTD(g: Graph, maxLabel: number): Art {
-  const { layers, links, chains } = buildLayers(g, maxLabel)
+  const { layers, links, chains, backs } = buildLayers(g, maxLabel)
   sizeNodes(layers)
+  // a label sits to the right of its line, so a wide one needs room past its box
+  const labelRoom = new Map<LNode, number>()
+  for (const l of links)
+    if (l.label) {
+      const past = 2 + strWidth(l.label) - (l.v.w - Math.floor(l.v.w / 2))
+      labelRoom.set(l.v, Math.max(labelRoom.get(l.v) ?? 0, past))
+    }
   placeAxis(
     layers,
     links,
     n => n.w,
-    (a, b) => (a.real || b.real ? 3 : 1),
+    (a, b) => (a.real || b.real ? 3 : 1) + (labelRoom.get(a) ?? 0),
     (n, p) => (n.x = p),
     n => n.x,
   )
@@ -692,7 +717,7 @@ function renderTD(g: Graph, maxLabel: number): Art {
     const arrowRow = gTop + gapH[L] - 1
     const sx = cx(l.u)
     const tx = cx(l.v)
-    const sy = l.u.real ? l.u.y + l.u.h : gTop - 1
+    const sy = l.u.real ? l.u.y + l.u.h - 1 : gTop - 1
     const st = l.style
     cv.vseg(sx, sy, gMid, st)
     cv.hseg(gMid, sx, tx, st)
@@ -700,10 +725,40 @@ function renderTD(g: Graph, maxLabel: number): Art {
     if (l.u.real && !l.arrowU) marks.push([sx, l.u.y + l.u.h - 1, 'exitD'])
     if (l.arrowV) marks.push([tx, arrowRow, '▼', ARROW_COLOR])
     if (l.arrowU) marks.push([sx, gTop, '▲', ARROW_COLOR])
-    if (l.label) {
-      const lw = strWidth(l.label)
-      marks.push([Math.max(0, tx - Math.floor(lw / 2)), arrowRow - 1, l.label, LABEL_COLOR])
+    // beside the line: a double-width character cannot be centred on a one-cell line
+    if (l.label) marks.push([tx + 2, arrowRow - 1, l.label, LABEL_COLOR])
+  }
+
+  // back edges: out of the right side, up a lane right of the graph, into the right side
+  const labelEnd = links.filter(l => l.label).map(l => cx(l.v) + 2 + strWidth(l.label))
+  let laneX = Math.max(...layers.flat().map(n => n.x + n.w), ...labelEnd) + 1
+  for (const b of backs) {
+    const lane = laneX
+    const port = (n: LNode): number => {
+      const py = n.y + Math.floor(n.h / 2)
+      const edge = n.x + n.w - 1
+      if (!layers[n.layer].some(o => o.real && o.x > n.x)) {
+        cv.hseg(py, edge, lane, b.style)
+        return py
+      }
+      // a box on the right: step down to the free row under this band and run along it
+      const c = edge + 2
+      const row = bandTop[n.layer] + bandH[n.layer]
+      cv.hseg(py, edge, c, b.style)
+      cv.vseg(c, py, row, b.style)
+      cv.hseg(row, c, lane, b.style)
+      return row
     }
+    const ys = port(b.from)
+    const ye = port(b.to)
+    cv.vseg(lane, ys, ye, b.style)
+    const sy = b.from.y + Math.floor(b.from.h / 2)
+    const ty = b.to.y + Math.floor(b.to.h / 2)
+    if (!b.tail) marks.push([b.from.x + b.from.w - 1, sy, 'exitR'])
+    else marks.push([b.from.x + b.from.w, sy, '◄', ARROW_COLOR])
+    if (b.head) marks.push([b.to.x + b.to.w, ty, '◄', ARROW_COLOR])
+    if (b.label) marks.push([lane + 2, Math.floor((ys + ye) / 2), b.label, LABEL_COLOR])
+    laneX += 2 + (b.label ? strWidth(b.label) + 2 : 0)
   }
   for (const ly of layers) for (const n of ly) if (n.real) drawBox(cv, n)
   for (const [x, yy, s, color] of marks) {
@@ -711,6 +766,12 @@ function renderTD(g: Graph, maxLabel: number): Art {
       const c = cv.cell(x, yy)
       if (c.ch === '─') c.ch = '┬'
       else if (c.ch === '═') c.ch = '╤'
+      continue
+    }
+    if (s === 'exitR') {
+      const c = cv.cell(x, yy)
+      if (c.ch === '│') c.ch = '├'
+      else if (c.ch === '║') c.ch = '╟'
       continue
     }
     cv.text(x, yy, s, color)
@@ -721,7 +782,7 @@ function renderTD(g: Graph, maxLabel: number): Art {
 // ---------------------------------------------------------------- LR
 
 function renderLR(g: Graph, maxLabel: number): Art {
-  const { layers, links, chains } = buildLayers(g, maxLabel)
+  const { layers, links, chains, backs } = buildLayers(g, maxLabel)
   sizeNodes(layers)
   placeAxis(
     layers,
@@ -741,7 +802,10 @@ function renderLR(g: Graph, maxLabel: number): Art {
       const L = l.u.layer
       labelW[L] = Math.max(labelW[L], strWidth(l.label))
     }
-  const gapW = layers.map((_, L) => (L + 1 < layers.length ? (labelW[L] ? labelW[L] + 6 : 6) : 0))
+  const boxBelow = (n: LNode) => layers[n.layer].some(o => o.real && o.y > n.y)
+  // layers where a back edge has to step around a box get a free column for it
+  const channel = layers.map((_, L) => (backs.some(b => [b.from, b.to].some(n => n.layer === L && boxBelow(n))) ? 2 : 0))
+  const gapW = layers.map((_, L) => (L + 1 < layers.length ? (labelW[L] ? labelW[L] + 6 : 6) : 0) + channel[L])
   const colX: number[] = []
   let x = 0
   layers.forEach((_, L) => {
@@ -758,7 +822,7 @@ function renderLR(g: Graph, maxLabel: number): Art {
   for (const l of links) {
     const L = l.u.layer
     const gLeft = colX[L] + colW[L]
-    const gMid = gLeft + 1
+    const gMid = gLeft + 1 + channel[L]
     const arrowCol = gLeft + gapW[L] - 1
     const sy = l.u.real ? cy(l.u) : l.u.y
     const ty = l.v.real ? cy(l.v) : l.v.y
@@ -777,12 +841,52 @@ function renderLR(g: Graph, maxLabel: number): Art {
       marks.push([lx, ty, l.label, LABEL_COLOR])
     }
   }
+
+  // back edges: out of the bottom, left along a lane under the graph, up into the bottom
+  const laneTop = Math.max(...layers.flat().map(n => n.y + n.h)) + 1
+  backs.forEach((b, i) => {
+    const laneY = laneTop + i
+    const port = (n: LNode): number => {
+      const px = n.x + Math.floor(n.w / 2)
+      const edge = n.y + n.h - 1
+      if (!boxBelow(n)) {
+        cv.vseg(px, edge, laneY, b.style)
+        return px
+      }
+      // a box underneath: run along the free row below this box to the column gap, then down
+      const c = colX[n.layer] + colW[n.layer] + 1
+      const row = n.y + n.h
+      cv.vseg(px, edge, row, b.style)
+      cv.hseg(row, px, c, b.style)
+      cv.vseg(c, row, laneY, b.style)
+      return c
+    }
+    const xs = port(b.from)
+    const xe = port(b.to)
+    cv.hseg(laneY, xs, xe, b.style)
+    const sx = b.from.x + Math.floor(b.from.w / 2)
+    const tx = b.to.x + Math.floor(b.to.w / 2)
+    if (!b.tail) marks.push([sx, b.from.y + b.from.h - 1, 'exitB'])
+    else marks.push([sx, b.from.y + b.from.h, '▲', ARROW_COLOR])
+    if (b.head) marks.push([tx, b.to.y + b.to.h, '▲', ARROW_COLOR])
+    if (b.label) {
+      const lw = strWidth(b.label)
+      const [a, z] = xs < xe ? [xs, xe] : [xe, xs]
+      marks.push([Math.max(a + 1, Math.floor((a + z - lw) / 2)), laneY, b.label, LABEL_COLOR])
+    }
+  })
   for (const ly of layers) for (const n of ly) if (n.real) drawBox(cv, n)
   for (const [mx, my, s, color] of marks) {
     if (s === 'exitR') {
       const c = cv.cell(mx, my)
       if (c.ch === '│') c.ch = '├'
       else if (c.ch === '║') c.ch = '╟'
+      continue
+    }
+    if (s === 'exitB') {
+      const c = cv.cell(mx, my)
+      if (c.ch === '─') c.ch = '┬'
+      else if (c.ch === '═') c.ch = '╤'
       continue
     }
     cv.text(mx, my, s, color)
