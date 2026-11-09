@@ -55,6 +55,27 @@ Every diagram has two buttons above its top right corner. Click one, and a short
 Each diagram below is what the mod draws in the terminal. Open **Source** to see the mermaid that made it.
 
 <table>
+<tr><td colspan="2" valign="top">
+
+**flowchart**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/flowchart-dark.svg"><img src="docs/images/flowchart-light.svg" alt="flowchart drawn by ccmermaid"></picture>
+
+</td></tr>
+<tr><td colspan="2" valign="top">
+<details><summary>Source</summary>
+
+```
+flowchart LR
+    A([Request]) --> B[Query DB]
+    B --> C{OK?}
+    C -- yes --> D[Return]
+    C -- no --> E[Wait]
+    E -- retry --> B
+```
+
+</details>
+</td></tr>
 <tr><td width="50%" valign="top">
 
 **sequenceDiagram**

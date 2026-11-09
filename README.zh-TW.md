@@ -55,6 +55,27 @@ claude plugin install ccmermaid --marketplace weichieh0204/ccmermaid
 下面每張圖都是這個 mod 在終端機畫出來的樣子。點開「原始碼」可以看產生它的 mermaid。
 
 <table>
+<tr><td colspan="2" valign="top">
+
+**flowchart**
+
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/flowchart-dark.svg"><img src="docs/images/flowchart-light.svg" alt="flowchart drawn by ccmermaid"></picture>
+
+</td></tr>
+<tr><td colspan="2" valign="top">
+<details><summary>原始碼</summary>
+
+```
+flowchart LR
+    A([Request]) --> B[Query DB]
+    B --> C{OK?}
+    C -- yes --> D[Return]
+    C -- no --> E[Wait]
+    E -- retry --> B
+```
+
+</details>
+</td></tr>
 <tr><td width="50%" valign="top">
 
 **sequenceDiagram**
