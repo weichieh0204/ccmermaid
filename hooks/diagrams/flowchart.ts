@@ -206,6 +206,11 @@ function parseEdge(
 
 const SKIP = /^(subgraph|end|classDef|class|style|linkStyle|click|direction|accTitle|accDescr)\b/
 
+/** An edge label is drawn on one row beside its line, so a <br> inside it becomes " / ". */
+function oneLine(label: string): string {
+  return label.split('\n').map(t => t.trim()).filter(Boolean).join(' / ')
+}
+
 export function parseFlowchart(src: string): Graph | null {
   const lines = src.split(/\r?\n/).map(l => l.replace(/%%.*$/, ''))
   let g: Graph | null = null
@@ -235,7 +240,7 @@ export function parseFlowchart(src: string): Graph | null {
         if (!right) break
         for (const a of left.ids)
           for (const b of right.ids)
-            g.edges.push({ from: a, to: b, label: ed.label, style: ed.style, head: ed.head, tail: ed.tail })
+            g.edges.push({ from: a, to: b, label: oneLine(ed.label), style: ed.style, head: ed.head, tail: ed.tail })
         left = right
         i = right.end
       }

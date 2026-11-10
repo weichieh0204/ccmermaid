@@ -162,3 +162,27 @@ test('a two-way pair stays one double-headed line', () => {
   expect(art).toContain('►')
   expect(art).not.toContain('▲')
 })
+
+test('a line break in an edge label keeps the drawing on its rows', async ($, on) => {
+  const copied: string[] = []
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>engine</Text>
+  })
+  on('ui.copy', (_, e) => {
+    copied.push(e.text)
+    return { value: { isCopied: true } }
+  })
+  on('ui.toast', () => ({ value: undefined }))
+  for (const dir of ['LR', 'TD']) {
+    copied.length = 0
+    const src = `flowchart ${dir}\n  A[cam<br/>CPU 1.0] -->|960x540<br/>1.5MB| B[crop]\n  B --> C[post]`
+    const ui = await $.ui.mount({ ...MSG('terminal'), props: { text: '```mermaid\n' + src + '\n```\n', isFirstOfReply: true } })
+    await ui.press({ key: 'art-0' })
+    expect(copied[0]).toContain('960x540 / 1.5MB')
+    const rows = copied[0].split('\n')
+    const widths = rows.filter(r => r.includes('│')).map(r => r.indexOf('│'))
+    expect(widths.length).toBeGreaterThan(0)
+    await ui.unmount()
+  }
+})
