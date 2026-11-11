@@ -1,4 +1,6 @@
 import { expect, test } from 'claude-code/testing'
+
+import { artToPicture, asciiJson } from './png'
 import { renderMermaid } from './render'
 
 const TEXT = '說明如下：\n\n```mermaid\ngraph LR\n  input --> parse[parse] --> D{valid?}\n  D -- yes --> out\n```\n\n結束。'
@@ -185,4 +187,36 @@ test('a line break in an edge label keeps the drawing on its rows', async ($, on
     expect(widths.length).toBeGreaterThan(0)
     await ui.unmount()
   }
+})
+
+test('png: the art becomes grid cells, box pieces as line bits, wide characters two columns', async () => {
+  const pic = artToPicture({
+    lines: [[{ text: '┌─┐', color: '#89b4fa' }], [{ text: '│測│' }], [{ text: '██' , color: '#a6e3a1' }]],
+    plain: '',
+    width: 4,
+  })
+  expect(pic.cols).toBe(4)
+  expect(pic.rows).toBe(3)
+  const at = (x: number, y: number) => pic.cells.find(c => c.x === x && c.y === y)
+  expect(at(0, 0)?.b).toBe(2 | 8)
+  expect(at(1, 0)?.b).toBe(4 | 8)
+  expect(at(1, 1)?.t).toBe('測')
+  expect(at(1, 1)?.w).toBe(2)
+  expect(at(3, 1)?.b).toBe(1 | 2)
+  expect(at(0, 2)?.f).toBe(1)
+  const json = asciiJson(pic)
+  expect(/^[\x00-\x7f]*$/.test(json)).toBe(true)
+  expect(JSON.parse(json).cells.find((c: { t?: string }) => c.t)?.t).toBe('測')
+})
+
+test('flowchart: labels without spaces and a dotted return edge keep their line', () => {
+  const tight = renderMermaid('flowchart LR\n  a -.next.-> b\n  b--text-->c', 120)!.plain
+  expect(tight).toContain('next')
+  expect(tight).toContain('text')
+  const back = renderMermaid('flowchart LR\n  crop --> post\n  post -.->|next| crop', 120)!.plain
+  expect(back).toContain('┈')
+  expect(back).toContain('next')
+  expect(back).not.toContain('◄────►')
+  const twin = renderMermaid('flowchart LR\n  a --> b\n  b --> a', 120)!.plain
+  expect(twin).toContain('◄────►')
 })

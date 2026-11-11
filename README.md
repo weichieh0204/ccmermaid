@@ -19,7 +19,7 @@
 When Claude writes a `mermaid` code block, Claude Code normally shows the code. ccmermaid parses it and draws the diagram instead, with boxes, arrows and colors made of plain characters, so it reads at a glance and stays text.
 
 - **8 diagram types:** flowchart, sequenceDiagram, stateDiagram-v2, gantt, gitGraph, pie, mindmap and timeline.
-- **Two copy buttons** on every diagram ([Copy buttons](#copy-buttons)).
+- **Copy buttons** on every diagram: the source, the text drawing, or a PNG image on Windows ([Copy buttons](#copy-buttons)).
 - **Safe fallback:** a diagram it cannot parse stays the original code block, so nothing is lost.
 - **Nothing else changes:** replies without mermaid are drawn by Claude Code as usual.
 
@@ -43,12 +43,13 @@ To make Claude draw diagrams more often, add a line to your `CLAUDE.md`, for exa
 
 ## Copy buttons
 
-Every diagram has two buttons above its top right corner. Click one, and a short toast confirms the copy.
+Every diagram has buttons above its top right corner. Click one, and a short toast confirms the copy.
 
 | Button | Copies | Use it for |
 | --- | --- | --- |
 | **⧉&nbsp;source** | the original mermaid code | pasting into GitHub, docs, or the [Mermaid Live Editor](https://mermaid.live) to get a real image |
-| **⧉&nbsp;art** | the drawing as plain text, without colors | pasting into commit messages, code comments, chats or any plain text file |
+| **⧉&nbsp;art** | the drawing as plain text, without colors | pasting into commit messages, code comments, chats or any plain text file (it lines up only in a monospace font) |
+| **⧉&nbsp;png** | the drawing as a PNG image, with colors, drawn with real lines | pasting into slides, documents and chats, where the text version would not line up. Windows and WSL only: it uses Windows PowerShell, and the button is hidden elsewhere |
 
 ## Gallery
 
@@ -258,7 +259,8 @@ The code is in `hooks/`, one file per diagram type:
 
 | File | Job |
 | --- | --- |
-| `register.tsx` | the `ui.render` hook that swaps the code block for the drawing, and the two copy buttons |
+| `register.tsx` | the `ui.render` hook that swaps the code block for the drawing, and the copy buttons |
+| `png.ts`, `clip_png.ps1` | the PNG copy: the drawing as grid cells, drawn by Windows PowerShell onto the clipboard |
 | `render.ts` | finds the mermaid blocks in a reply and sends each one to the file for its diagram type |
 | `common.ts` | shared by every diagram: character width, colors, small text helpers |
 | `diagrams/<type>.ts` | one drawer per type: `flowchart`, `state`, `sequence`, `gantt`, `gitgraph`, `pie`, `mindmap`, `timeline` |

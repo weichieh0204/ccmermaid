@@ -1,5 +1,7 @@
 import type { EngineInterface, Register, RenderSurface } from 'claude-code'
 
+import type { Art } from './common'
+import { copyPng, findPowerShell } from './png'
 import { renderMermaid, splitMermaid } from './render'
 
 async function copy($: EngineInterface, surface: RenderSurface, text: string, what: string) {
@@ -7,7 +9,30 @@ async function copy($: EngineInterface, surface: RenderSurface, text: string, wh
   $.ui.toast(res.isCopied ? `Copied ${what}` : `Copy failed (${res.reason})`)
 }
 
+// The PNG button needs Windows PowerShell. Looked up once per load, in the background.
+let powerShell: Awaited<ReturnType<typeof findPowerShell>> = null
+
+async function copyImage($: EngineInterface, art: Art) {
+  if (!powerShell) return
+  $.ui.toast('Copying diagram image…')
+  try {
+    const error = await copyPng($, powerShell, art)
+    $.ui.toast(error ? `Image copy failed (${error})` : 'Copied diagram image')
+  } catch (err) {
+    $.ui.toast(`Image copy failed (${err instanceof Error ? err.message : String(err)})`)
+  }
+}
+
 export const register: Register = on => {
+  on('session.start', async ($, e, next) => {
+    const started = await next(e)
+    void findPowerShell($).then(found => {
+      powerShell = found
+      if (found) $.ui.invalidate('ui.render')
+    })
+    return started
+  })
+
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const text = e.props.text
     if (!/(`{3,}|~{3,})[ \t]*mermaid/.test(text)) return next(e)
@@ -57,6 +82,9 @@ export const register: Register = on => {
                 label="⧉ art"
                 onPress={press => copy($, press.surface, art.plain, 'diagram art')}
               />
+            ) : null}
+            {art && powerShell && e.surface === 'terminal' ? (
+              <Button key={`png-${i}`} plain dimColor label="⧉ png" onPress={() => copyImage($, art)} />
             ) : null}
           </Box>
           {art ? (

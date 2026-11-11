@@ -167,7 +167,9 @@ function parseGroup(s: string, i: number, g: Graph): { ids: string[]; end: numbe
   return { ids, end }
 }
 
-const LABELED = /^(--|==|-\.)\s+(\S[^|]*?)\s+(-{2,}>|-{3,}|={2,}>|={3,}|\.-+>|\.-+)/
+// "A -- text --> B", "A -. text .-> B", "A == text ==> B": the spaces around the text are optional,
+// as in mermaid ("A-.text.->B"). The lookahead keeps a plain "-->", "-.->" or "==>" out.
+const LABELED = /^(--|==|-\.)(?![->.=])\s*(\S[^|]*?)\s*(-{2,}>|-{3,}|={2,}>|={3,}|\.-+>|\.-+)/
 const SIMPLE = /^(<)?(-\.+-|-{2,}|={2,})(>|x|o)?/
 const PIPE = /^\s*\|([^|]*)\|/
 
@@ -325,10 +327,12 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
     if (!state.get(id)) visit(id)
   })
 
-  // a reversed edge with a forward twin stays one double-headed line, the others become back edges
-  const pair = (a: string, b: string) => `${a}\u0000${b}`
-  const forward = new Set(edges.filter((_, k) => !reversed.has(k)).map(e => pair(e.from, e.to)))
-  const isBack = (k: number) => reversed.has(k) && !forward.has(pair(edges[k].to, edges[k].from))
+  // a reversed edge with a forward twin of the same line style, and no label of its own, stays one
+  // double-headed line. The others become back edges, so a dotted or labelled return keeps its look.
+  const pair = (a: string, b: string, style: LineStyle) => `${a}\u0000${b}\u0000${style}`
+  const forward = new Set(edges.filter((_, k) => !reversed.has(k)).map(e => pair(e.from, e.to, e.style)))
+  const isBack = (k: number) =>
+    reversed.has(k) && (!!edges[k].label || !forward.has(pair(edges[k].to, edges[k].from, edges[k].style)))
 
   // longest-path layering
   const dag = edges
