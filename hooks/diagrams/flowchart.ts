@@ -803,6 +803,11 @@ class Canvas {
   line(x: number, y: number, bits: number, style: LineStyle, color = LINE_COLOR) {
     if (x < 0 || y < 0) return
     const c = this.cell(x, y)
+    // an edge crossing a frame takes the cell: the frame opens there instead of making a junction
+    if (c.lineColor === FRAME_COLOR && color !== FRAME_COLOR) {
+      c.bits = 0
+      c.style = 'solid'
+    }
     c.bits |= bits
     if (style !== 'solid') c.style = style
     c.lineColor = color
