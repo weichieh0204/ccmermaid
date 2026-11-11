@@ -42,9 +42,11 @@ function wrapLabel(label: string, max: number): string[] {
 type Shape = 'rect' | 'round' | 'diamond' | 'double'
 type LineStyle = 'solid' | 'dotted' | 'thick'
 type Dir = 'TD' | 'LR'
-type GNode = { id: string; label: string; shape: Shape; idx: number }
+type GNode = { id: string; label: string; shape: Shape; idx: number; cluster: Cluster | null }
 type GEdge = { from: string; to: string; label: string; style: LineStyle; head: boolean; tail: boolean }
-type Graph = { dir: Dir; nodes: Map<string, GNode>; edges: GEdge[] }
+/** A subgraph: a named frame around some nodes, maybe inside another one. */
+type Cluster = { id: string; title: string; parent: Cluster | null }
+type Graph = { dir: Dir; nodes: Map<string, GNode>; edges: GEdge[]; clusters: Cluster[]; open: Cluster[] }
 
 const ID_RE = /^[\p{L}\p{N}_]+(?:-(?![-.>])[\p{L}\p{N}_]+)*/u
 
@@ -102,9 +104,11 @@ function skipWs(s: string, i: number): number {
 function ensureNode(g: Graph, id: string): GNode {
   let n = g.nodes.get(id)
   if (!n) {
-    n = { id, label: id, shape: 'rect', idx: g.nodes.size }
+    n = { id, label: id, shape: 'rect', idx: g.nodes.size, cluster: null }
     g.nodes.set(id, n)
   }
+  // as in mermaid: a node first mentioned inside a subgraph belongs to the innermost open one
+  if (!n.cluster && g.open.length) n.cluster = g.open[g.open.length - 1]
   return n
 }
 
@@ -206,7 +210,17 @@ function parseEdge(
   return { end, label, style: edgeStyle(sm[2]), head: !!sm[3], tail: !!sm[1] }
 }
 
-const SKIP = /^(subgraph|end|classDef|class|style|linkStyle|click|direction|accTitle|accDescr)\b/
+const SKIP = /^(classDef|class|style|linkStyle|click|direction|accTitle|accDescr)\b/
+
+/** "subgraph id[Title]", "subgraph id [Title]", "subgraph "Title"" or "subgraph Title words". */
+function parseSubgraph(rest: string, index: number): { id: string; title: string } {
+  const t = rest.trim()
+  const m = /^([\p{L}\p{N}_-]+)\s*\[\s*"?([^"\]]*)"?\s*\]$/u.exec(t)
+  if (m) return { id: m[1], title: cleanLabel(m[2]) || m[1] }
+  const q = /^"([^"]*)"$/.exec(t)
+  if (q) return { id: `__sub${index}`, title: cleanLabel(q[1]) }
+  return { id: t || `__sub${index}`, title: cleanLabel(t) }
+}
 
 /** An edge label is drawn on one row beside its line, so a <br> inside it becomes " / ". */
 function oneLine(label: string): string {
@@ -224,7 +238,19 @@ export function parseFlowchart(src: string): Graph | null {
         const hm = /^(graph|flowchart)\b\s*(TB|TD|BT|RL|LR)?\s*$/i.exec(st)
         if (!hm) return null
         const d = (hm[2] ?? 'TD').toUpperCase()
-        g = { dir: d === 'LR' || d === 'RL' ? 'LR' : 'TD', nodes: new Map(), edges: [] }
+        g = { dir: d === 'LR' || d === 'RL' ? 'LR' : 'TD', nodes: new Map(), edges: [], clusters: [], open: [] }
+        continue
+      }
+      const sub = /^subgraph\b(.*)$/.exec(st)
+      if (sub) {
+        const { id, title } = parseSubgraph(sub[1], g.clusters.length)
+        const c: Cluster = { id, title, parent: g.open[g.open.length - 1] ?? null }
+        g.clusters.push(c)
+        g.open.push(c)
+        continue
+      }
+      if (/^end\b/.test(st)) {
+        g.open.pop()
         continue
       }
       if (SKIP.test(st)) continue
@@ -248,8 +274,40 @@ export function parseFlowchart(src: string): Graph | null {
       }
     }
   }
-  if (!g || g.nodes.size === 0) return null
+  if (!g) return null
+  const byId = new Map(g.clusters.map(c => [c.id, c]))
+  const firstOf = (c: Cluster) => [...g!.nodes.values()].find(n => n.cluster && inside(n.cluster, c) && !byId.has(n.id))
+  for (const e of g.edges)
+    for (const end of ['from', 'to'] as const) {
+      const c = byId.get(e[end])
+      const n = c && firstOf(c)
+      if (n) e[end] = n.id
+    }
+  for (const id of byId.keys()) g.nodes.delete(id)
+  if (g.nodes.size === 0) return null
   return g
+}
+
+/** True when cluster a is c or lies inside it. */
+function inside(a: Cluster | null, c: Cluster): boolean {
+  for (let x = a; x; x = x.parent) if (x === c) return true
+  return false
+}
+
+/** The clusters around a node, outermost first. */
+function pathOf(c: Cluster | null): Cluster[] {
+  const out: Cluster[] = []
+  for (let x = c; x; x = x.parent) out.unshift(x)
+  return out
+}
+
+/** The innermost cluster around both. */
+function common(a: Cluster | null, b: Cluster | null): Cluster | null {
+  const pa = pathOf(a)
+  const pb = pathOf(b)
+  let k = 0
+  while (k < pa.length && k < pb.length && pa[k] === pb[k]) k++
+  return k ? pa[k - 1] : null
 }
 
 // ---------------------------------------------------------------- layout
@@ -260,6 +318,7 @@ const LABEL_COLOR = 'text'
 
 type LNode = {
   id: string
+  cluster: Cluster | null
   real: boolean
   lines: string[]
   shape: Shape
@@ -286,7 +345,7 @@ type Link = {
 // an edge pointing at an earlier layer, drawn around the graph instead of through it
 type BackEdge = { from: LNode; to: LNode; style: LineStyle; label: string; head: boolean; tail: boolean }
 
-type Layout = { layers: LNode[][]; links: Link[]; backs: BackEdge[] }
+type Layout = { layers: LNode[][]; links: Link[]; backs: BackEdge[]; clusters: Cluster[] }
 
 function straightenDummies(layers: LNode[][], chains: LNode[][], pos: (n: LNode) => number, set: (n: LNode, p: number) => void, size: (n: LNode) => number, gap: number) {
   for (const chain of chains) {
@@ -365,6 +424,7 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
     const gn = g.nodes.get(id)!
     const n: LNode = {
       id,
+      cluster: gn.cluster,
       real: true,
       lines: wrapLabel(gn.label, maxLabel),
       shape: gn.shape,
@@ -407,6 +467,7 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
     for (let L = prev.layer + 1; L < target.layer; L++) {
       const dn: LNode = {
         id: `__d${dummyId++}`,
+        cluster: common(prev.cluster, target.cluster),
         real: false,
         lines: [],
         shape: 'rect',
@@ -460,6 +521,7 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
     for (let L = 1; L < layers.length; L++) sortLayer(layers[L], preds)
     for (let L = layers.length - 2; L >= 0; L--) sortLayer(layers[L], succs)
   }
+  if (g.clusters.length) groupClusters(layers)
 
   const backs = edges.flatMap((e, k) =>
     isBack(k)
@@ -469,7 +531,208 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
   // shortest span first, so longer lanes wrap around shorter ones
   backs.sort((a, b) => a.from.layer - a.to.layer - (b.from.layer - b.to.layer))
 
-  return { layers, links, chains, backs }
+  return { layers, links, chains, backs, clusters: g.clusters }
+}
+
+/**
+ * Reorders every layer so the nodes of one cluster sit next to each other, with no other node
+ * between them. A cluster's place is the mean relative position of its nodes over all layers,
+ * the same in every layer, so frames do not swap sides from one layer to the next.
+ */
+function groupClusters(layers: LNode[][]) {
+  const rel = (n: LNode) => (layers[n.layer].length > 1 ? n.order / (layers[n.layer].length - 1) : 0.5)
+  const sum = new Map<Cluster, [number, number]>()
+  for (const ly of layers)
+    for (const n of ly)
+      for (const c of pathOf(n.cluster)) {
+        const [a, k] = sum.get(c) ?? [0, 0]
+        sum.set(c, [a + rel(n), k + 1])
+      }
+  const rank = (c: Cluster) => {
+    const [a, k] = sum.get(c)!
+    return a / k
+  }
+  for (const ly of layers) {
+    ly.sort((a, b) => {
+      const pa = pathOf(a.cluster)
+      const pb = pathOf(b.cluster)
+      let k = 0
+      while (k < pa.length && k < pb.length && pa[k] === pb[k]) k++
+      const ka = k < pa.length ? rank(pa[k]) : rel(a)
+      const kb = k < pb.length ? rank(pb[k]) : rel(b)
+      return ka - kb || a.order - b.order
+    })
+    ly.forEach((n, i) => (n.order = i))
+  }
+}
+
+/** How many frame sides stand between two neighbours in a layer. */
+function frameSides(a: LNode, b: LNode): number {
+  const pa = pathOf(a.cluster)
+  const pb = pathOf(b.cluster)
+  let k = 0
+  while (k < pa.length && k < pb.length && pa[k] === pb[k]) k++
+  return pa.length - k + (pb.length - k)
+}
+
+type Frame = { c: Cluster; lo: number; hi: number; minL: number; maxL: number }
+
+const FRAME_PAD = 2 // a frame line and one empty cell between it and what it holds
+
+/** Each cluster's span across the layers and, padded, along the cross axis (inner frames first). */
+function frames(
+  layers: LNode[][],
+  clusters: Cluster[],
+  pos: (n: LNode) => number,
+  size: (n: LNode) => number,
+  fitTitle = false,
+): Frame[] {
+  const byC = new Map<Cluster, Frame>()
+  const depth = (c: Cluster) => pathOf(c).length
+  for (const c of [...clusters].sort((a, b) => depth(b) - depth(a))) {
+    let lo = Infinity
+    let hi = -Infinity
+    let minL = Infinity
+    let maxL = -Infinity
+    for (const ly of layers)
+      for (const n of ly)
+        if (n.cluster === c) {
+          lo = Math.min(lo, pos(n))
+          hi = Math.max(hi, pos(n) + size(n) - 1)
+          minL = Math.min(minL, n.layer)
+          maxL = Math.max(maxL, n.layer)
+        }
+    for (const f of byC.values())
+      if (f.c.parent === c) {
+        lo = Math.min(lo, f.lo)
+        hi = Math.max(hi, f.hi)
+        minL = Math.min(minL, f.minL)
+        maxL = Math.max(maxL, f.maxL)
+      }
+    if (lo === Infinity) continue
+    lo -= FRAME_PAD
+    hi += FRAME_PAD
+    // "╭─ title ─╮": the title needs its width plus 5 cells
+    if (fitTitle) hi = Math.max(hi, lo + strWidth(c.title) + 5)
+    byC.set(c, { c, lo, hi, minL, maxL })
+  }
+  return [...byC.values()]
+}
+
+/**
+ * Lays clusters out as blocks: the inside of each cluster is placed first (its nodes and its child
+ * clusters, left to right in rank order), which gives the block its width. Then the block is placed
+ * like one wide item in its parent, at the same cross position in every layer it spans, so frames
+ * never overlap and nothing from outside ends up inside one. Each item is put at the position the
+ * plain layout wanted for it, or further on when that would collide with the item before it.
+ */
+function placeClusters(
+  layers: LNode[][],
+  clusters: Cluster[],
+  pos: (n: LNode) => number,
+  set: (n: LNode, p: number) => void,
+  size: (n: LNode) => number,
+  nodeGap: (a: LNode, b: LNode) => number,
+  frameGap: number,
+  fitTitle: boolean,
+) {
+  const all = layers.flat()
+  const rel = (n: LNode) => (layers[n.layer].length > 1 ? n.order / (layers[n.layer].length - 1) : 0.5)
+  const want = new Map(all.map(n => [n, pos(n)]))
+  const kids = new Map<Cluster | null, Cluster[]>()
+  const own = new Map<Cluster | null, LNode[]>()
+  for (const c of clusters) kids.set(c.parent, [...(kids.get(c.parent) ?? []), c])
+  for (const n of all) own.set(n.cluster, [...(own.get(n.cluster) ?? []), n])
+  const under = (c: Cluster) => all.filter(n => inside(n.cluster, c))
+  const rank = (c: Cluster) => {
+    const ns = under(c)
+    return ns.reduce((t, n) => t + rel(n), 0) / Math.max(1, ns.length)
+  }
+
+  type Block = { off: Map<LNode, number>; width: number; minL: number; maxL: number; centre: number }
+  type Item = { node?: LNode; block?: Block; minL: number; maxL: number; w: number; rank: number; want: number }
+
+  const build = (c: Cluster | null): Block | null => {
+    const items: Item[] = []
+    for (const k of kids.get(c) ?? []) {
+      const b = build(k)
+      if (b) items.push({ block: b, minL: b.minL, maxL: b.maxL, w: b.width, rank: rank(k), want: b.centre - b.width / 2 })
+    }
+    for (const n of own.get(c) ?? [])
+      items.push({ node: n, minL: n.layer, maxL: n.layer, w: size(n), rank: rel(n), want: want.get(n)! })
+    if (!items.length) return null
+    items.sort((a, b) => a.rank - b.rank || a.want - b.want)
+    const right = new Map<number, { end: number; item: Item }>()
+    const at = new Map<Item, number>()
+    for (const it of items) {
+      let min = -Infinity
+      for (let L = it.minL; L <= it.maxL; L++) {
+        const prev = right.get(L)
+        if (!prev) continue
+        const gap = it.node && prev.item.node ? nodeGap(prev.item.node, it.node) : frameGap
+        min = Math.max(min, prev.end + gap)
+      }
+      const x = Math.max(min, Math.round(it.want))
+      at.set(it, x)
+      for (let L = it.minL; L <= it.maxL; L++) right.set(L, { end: x + it.w, item: it })
+    }
+    const lo = Math.min(...[...at.values()])
+    const hi = Math.max(...items.map(it => at.get(it)! + it.w))
+    const pad = c ? FRAME_PAD : 0
+    const off = new Map<LNode, number>()
+    for (const it of items) {
+      const x = at.get(it)! - lo + pad
+      if (it.node) off.set(it.node, x)
+      else for (const [n, o] of it.block!.off) off.set(n, x + o)
+    }
+    let width = hi - lo + 2 * pad
+    if (c && fitTitle) width = Math.max(width, strWidth(c.title) + 5)
+    const centre = lo + (hi - lo) / 2
+    return {
+      off,
+      width,
+      minL: Math.min(...items.map(it => it.minL)),
+      maxL: Math.max(...items.map(it => it.maxL)),
+      centre,
+    }
+  }
+  const root = build(null)
+  if (!root) return
+  for (const [n, x] of root.off) set(n, x)
+}
+
+/** Nesting numbers for the frame lines that share a gap: outer frames start first, inner ones end first. */
+function frameRows(fs: Frame[]) {
+  const startIdx = new Map<Cluster, number>()
+  const endIdx = new Map<Cluster, number>()
+  for (const f of fs) {
+    let k = 0
+    for (let p = f.c.parent; p; p = p.parent) if (fs.find(o => o.c === p)?.minL === f.minL) k++
+    startIdx.set(f.c, k)
+  }
+  const endDepth = (f: Frame): number =>
+    Math.max(0, ...fs.filter(o => o.c.parent === f.c && o.maxL === f.maxL).map(o => endDepth(o) + 1))
+  for (const f of fs) endIdx.set(f.c, endDepth(f))
+  const starts = (L: number) => Math.max(0, ...fs.filter(f => f.minL === L).map(f => startIdx.get(f.c)! + 1))
+  const ends = (L: number) => Math.max(0, ...fs.filter(f => f.maxL === L).map(f => endIdx.get(f.c)! + 1))
+  return { startIdx, endIdx, starts, ends }
+}
+
+const FRAME_COLOR = '#6c7086'
+const FRAME_TITLE = '#a6adc8'
+
+/** Draws a frame as lines (so a crossing edge makes a junction) and writes its title on the top side. */
+function drawFrame(cv: Canvas, left: number, top: number, right: number, bottom: number, title: string, marks: [number, number, string, string?][]) {
+  cv.hseg(top, left, right, 'solid', FRAME_COLOR)
+  cv.hseg(bottom, left, right, 'solid', FRAME_COLOR)
+  cv.vseg(left, top, bottom, 'solid', FRAME_COLOR)
+  cv.vseg(right, top, bottom, 'solid', FRAME_COLOR)
+  const room = right - left - 4
+  if (room < 1 || !title) return
+  let t = title
+  while (strWidth(t) > room && t.length > 1) t = t.slice(0, -1)
+  if (t !== title) t = t.slice(0, -1) + '…'
+  marks.unshift([left + 2, top, ` ${t} `, FRAME_TITLE])
 }
 
 // greedy 1-D placement along the cross axis
@@ -537,12 +800,12 @@ class Canvas {
     while (row.length <= x) row.push({ ch: null, bits: 0, style: 'solid' })
     return row[x]
   }
-  line(x: number, y: number, bits: number, style: LineStyle) {
+  line(x: number, y: number, bits: number, style: LineStyle, color = LINE_COLOR) {
     if (x < 0 || y < 0) return
     const c = this.cell(x, y)
     c.bits |= bits
     if (style !== 'solid') c.style = style
-    c.lineColor = LINE_COLOR
+    c.lineColor = color
   }
   put(x: number, y: number, ch: string, color?: string) {
     if (x < 0 || y < 0) return
@@ -560,15 +823,15 @@ class Canvas {
       cx += w
     }
   }
-  vseg(x: number, y1: number, y2: number, style: LineStyle) {
+  vseg(x: number, y1: number, y2: number, style: LineStyle, color?: string) {
     if (y1 === y2) return
     const [a, b] = y1 < y2 ? [y1, y2] : [y2, y1]
-    for (let y = a; y <= b; y++) this.line(x, y, (y > a ? U : 0) | (y < b ? D : 0), style)
+    for (let y = a; y <= b; y++) this.line(x, y, (y > a ? U : 0) | (y < b ? D : 0), style, color)
   }
-  hseg(y: number, x1: number, x2: number, style: LineStyle) {
+  hseg(y: number, x1: number, x2: number, style: LineStyle, color?: string) {
     if (x1 === x2) return
     const [a, b] = x1 < x2 ? [x1, x2] : [x2, x1]
-    for (let x = a; x <= b; x++) this.line(x, y, (x > a ? L_ : 0) | (x < b ? R : 0), style)
+    for (let x = a; x <= b; x++) this.line(x, y, (x > a ? L_ : 0) | (x < b ? R : 0), style, color)
   }
   render(): Art {
     const lines: Seg[][] = []
@@ -681,7 +944,7 @@ function sizeNodes(layers: LNode[][]) {
 // ---------------------------------------------------------------- TD
 
 function renderTD(g: Graph, maxLabel: number): Art {
-  const { layers, links, chains, backs } = buildLayers(g, maxLabel)
+  const { layers, links, chains, backs, clusters } = buildLayers(g, maxLabel)
   sizeNodes(layers)
   // a label sits to the right of its line, so a wide one needs room past its box
   const labelRoom = new Map<LNode, number>()
@@ -694,19 +957,30 @@ function renderTD(g: Graph, maxLabel: number): Art {
     layers,
     links,
     n => n.w,
-    (a, b) => (a.real || b.real ? 3 : 1) + (labelRoom.get(a) ?? 0),
+    (a, b) => (a.real || b.real ? 3 : 1) + (labelRoom.get(a) ?? 0) + FRAME_PAD * frameSides(a, b),
     (n, p) => (n.x = p),
     n => n.x,
   )
   straightenDummies(layers, chains, n => n.x, (n, p) => (n.x = p), n => n.w, 3)
+  if (clusters.length)
+    placeClusters(layers, clusters, n => n.x, (n, p) => (n.x = p), n => n.w,
+      (a, b) => (a.real || b.real ? 3 : 1) + (labelRoom.get(a) ?? 0), 2, true)
   const cx = (n: LNode) => n.x + Math.floor(n.w / 2)
+  const fs = frames(layers, clusters, n => n.x, n => n.w, true)
+  const fr = frameRows(fs)
 
+  // rows in the gap under layer L: the exit row(s), where frames ending at L close (inner first),
+  // the row the edges turn on, the top sides of frames starting at L + 1 (outer first),
+  // a label row when an edge into L + 1 has one, and the arrow row
   const bandH = layers.map(ly => Math.max(1, ...ly.filter(n => n.real).map(n => n.h)))
   const labeledInto = layers.map(() => false)
   for (const l of links) if (l.label) labeledInto[l.v.layer] = true
-  const gapH = layers.map((_, L) => (L + 1 < layers.length ? (labeledInto[L + 1] ? 4 : 3) : 0))
+  const exitRows = layers.map((_, L) => (fr.ends(L) ? fr.ends(L) + 1 : 1))
+  const gapH = layers.map((_, L) =>
+    L + 1 < layers.length ? exitRows[L] + 1 + fr.starts(L + 1) + (labeledInto[L + 1] ? 1 : 0) + 1 : 0,
+  )
   const bandTop: number[] = []
-  let y = 0
+  let y = fr.starts(0) ? fr.starts(0) + 1 : 0
   layers.forEach((_, L) => {
     bandTop[L] = y
     y += bandH[L] + gapH[L]
@@ -714,15 +988,23 @@ function renderTD(g: Graph, maxLabel: number): Art {
   for (const ly of layers) for (const n of ly) n.y = bandTop[n.layer]
 
   const cv = new Canvas()
+  const marks: [number, number, string, string?][] = []
+  for (const f of fs) {
+    const top =
+      f.minL === 0
+        ? fr.startIdx.get(f.c)!
+        : bandTop[f.minL - 1] + bandH[f.minL - 1] + exitRows[f.minL - 1] + 1 + fr.startIdx.get(f.c)!
+    const bottom = bandTop[f.maxL] + bandH[f.maxL] + 1 + fr.endIdx.get(f.c)!
+    drawFrame(cv, f.lo, top, f.hi, bottom, f.c.title, marks)
+  }
   // dummies: vertical through the band
   for (const ly of layers)
     for (const n of ly) if (!n.real) cv.vseg(n.x, n.y - 1, n.y + bandH[n.layer], 'solid')
 
-  const marks: [number, number, string, string?][] = []
   for (const l of links) {
     const L = l.u.layer
     const gTop = bandTop[L] + bandH[L]
-    const gMid = gTop + 1
+    const gMid = gTop + exitRows[L]
     const arrowRow = gTop + gapH[L] - 1
     const sx = cx(l.u)
     const tx = cx(l.v)
@@ -740,7 +1022,7 @@ function renderTD(g: Graph, maxLabel: number): Art {
 
   // back edges: out of the right side, up a lane right of the graph, into the right side
   const labelEnd = links.filter(l => l.label).map(l => cx(l.v) + 2 + strWidth(l.label))
-  let laneX = Math.max(...layers.flat().map(n => n.x + n.w), ...labelEnd) + 1
+  let laneX = Math.max(...layers.flat().map(n => n.x + n.w), ...labelEnd, ...fs.map(f => f.hi + 1)) + 1
   for (const b of backs) {
     const lane = laneX
     const port = (n: LNode): number => {
@@ -791,18 +1073,22 @@ function renderTD(g: Graph, maxLabel: number): Art {
 // ---------------------------------------------------------------- LR
 
 function renderLR(g: Graph, maxLabel: number): Art {
-  const { layers, links, chains, backs } = buildLayers(g, maxLabel)
+  const { layers, links, chains, backs, clusters } = buildLayers(g, maxLabel)
   sizeNodes(layers)
   placeAxis(
     layers,
     links,
     n => n.h,
-    (a, b) => (a.real || b.real ? 1 : 0),
+    (a, b) => (a.real || b.real ? 1 : 0) + FRAME_PAD * frameSides(a, b),
     (n, p) => (n.y = p),
     n => n.y,
   )
   straightenDummies(layers, chains, n => n.y, (n, p) => (n.y = p), n => n.h, 1)
+  if (clusters.length)
+    placeClusters(layers, clusters, n => n.y, (n, p) => (n.y = p), n => n.h, (a, b) => (a.real || b.real ? 1 : 0), 1, false)
   const cy = (n: LNode) => n.y + Math.floor(n.h / 2)
+  const fs = frames(layers, clusters, n => n.y, n => n.h)
+  const fr = frameRows(fs)
 
   const colW = layers.map(ly => Math.max(1, ...ly.filter(n => n.real).map(n => n.w)))
   const labelW = layers.map(() => 0)
@@ -814,24 +1100,55 @@ function renderLR(g: Graph, maxLabel: number): Art {
   const boxBelow = (n: LNode) => layers[n.layer].some(o => o.real && o.y > n.y)
   // layers where a back edge has to step around a box get a free column for it
   const channel = layers.map((_, L) => (backs.some(b => [b.from, b.to].some(n => n.layer === L && boxBelow(n))) ? 2 : 0))
-  const gapW = layers.map((_, L) => (L + 1 < layers.length ? (labelW[L] ? labelW[L] + 6 : 6) : 0) + channel[L])
+  // columns in the gap right of layer L: the exit column(s), where frames ending at L close
+  // (inner first), the back-edge channel, the column the edges turn on, the label span,
+  // the left sides of frames starting at L + 1 (outer first), and the arrow column
+  // nested right sides stand two columns apart, and a frame is made wide enough for its title
+  // by widening the gap after its last layer
+  const extra = new Map<Cluster, number>()
+  const rightOff = (f: Frame) => 1 + 2 * fr.endIdx.get(f.c)! + (extra.get(f.c) ?? 0)
+  const exitCols = layers.map(() => 1)
   const colX: number[] = []
-  let x = 0
-  layers.forEach((_, L) => {
-    colX[L] = x
-    x += colW[L] + gapW[L]
-  })
+  const gapW: number[] = []
+  const placeCols = () => {
+    layers.forEach((_, L) => {
+      exitCols[L] = Math.max(1, ...fs.filter(f => f.maxL === L).map(f => rightOff(f) + 1))
+      gapW[L] =
+        L + 1 < layers.length
+          ? exitCols[L] + channel[L] + 1 + (labelW[L] ? labelW[L] + 4 : 4) + fr.starts(L + 1)
+          : channel[L]
+    })
+    let x = fr.starts(0) ? fr.starts(0) + 1 : 0
+    layers.forEach((_, L) => {
+      colX[L] = x
+      x += colW[L] + gapW[L]
+    })
+  }
+  const leftOf = (f: Frame) =>
+    f.minL === 0 ? fr.startIdx.get(f.c)! : colX[f.minL] - 1 - fr.starts(f.minL) + fr.startIdx.get(f.c)!
+  const rightOf = (f: Frame) => colX[f.maxL] + colW[f.maxL] + rightOff(f)
+  placeCols()
+  // inner frames first, so an outer frame ending on the same layer is checked after its children grew
+  for (const f of [...fs].sort((a, b) => fr.endIdx.get(a.c)! - fr.endIdx.get(b.c)!)) {
+    const short = strWidth(f.c.title) + 5 - (rightOf(f) - leftOf(f) + 1)
+    if (short > 0) extra.set(f.c, short)
+    for (const o of fs)
+      if (o.maxL === f.maxL && o !== f && inside(f.c, o.c))
+        extra.set(o.c, Math.max(extra.get(o.c) ?? 0, rightOff(f) + 2 - (1 + 2 * fr.endIdx.get(o.c)!)))
+    placeCols()
+  }
   for (const ly of layers) for (const n of ly) n.x = colX[n.layer]
 
   const cv = new Canvas()
+  const marks: [number, number, string, string?][] = []
+  for (const f of fs) drawFrame(cv, leftOf(f), f.lo, rightOf(f), f.hi, f.c.title, marks)
   for (const ly of layers)
     for (const n of ly) if (!n.real) cv.hseg(n.y, n.x - 1, n.x + colW[n.layer], 'solid')
 
-  const marks: [number, number, string, string?][] = []
   for (const l of links) {
     const L = l.u.layer
     const gLeft = colX[L] + colW[L]
-    const gMid = gLeft + 1 + channel[L]
+    const gMid = gLeft + exitCols[L] + channel[L]
     const arrowCol = gLeft + gapW[L] - 1
     const sy = l.u.real ? cy(l.u) : l.u.y
     const ty = l.v.real ? cy(l.v) : l.v.y
@@ -845,14 +1162,14 @@ function renderLR(g: Graph, maxLabel: number): Art {
     if (l.arrowU) marks.push([sx, sy, '◄', ARROW_COLOR])
     if (l.label) {
       const lw = strWidth(l.label)
-      const span = arrowCol - gMid - 1
+      const span = arrowCol - fr.starts(L + 1) - gMid - 1
       const lx = gMid + 1 + Math.max(0, Math.floor((span - lw) / 2))
       marks.push([lx, ty, l.label, LABEL_COLOR])
     }
   }
 
   // back edges: out of the bottom, left along a lane under the graph, up into the bottom
-  const laneTop = Math.max(...layers.flat().map(n => n.y + n.h)) + 1
+  const laneTop = Math.max(...layers.flat().map(n => n.y + n.h), ...fs.map(f => f.hi + 1)) + 1
   backs.forEach((b, i) => {
     const laneY = laneTop + i
     const port = (n: LNode): number => {

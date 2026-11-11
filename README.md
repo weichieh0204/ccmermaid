@@ -236,7 +236,7 @@ timeline
 
 | Type | What is drawn |
 | --- | --- |
-| `flowchart` / `graph` | `LR` and `TD` layouts, node shapes, edge labels, dotted and thick edges |
+| `flowchart` / `graph` | `LR` and `TD` layouts, node shapes, edge labels, dotted and thick edges, `subgraph` frames with a title (nested ones too) |
 | `sequenceDiagram` | participants, actors, aliases, `autonumber`, notes, `loop` / `alt` / `opt` blocks, self messages |
 | `stateDiagram-v2` | `[*]` start and end, transition labels, `<<choice>>`, laid out like a flowchart |
 | `gantt` | sections, `done` / `active` / `crit` / `milestone`, `after id`, durations, dates or `dateFormat X` |

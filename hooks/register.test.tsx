@@ -220,3 +220,27 @@ test('flowchart: labels without spaces and a dotted return edge keep their line'
   const twin = renderMermaid('flowchart LR\n  a --> b\n  b --> a', 120)!.plain
   expect(twin).toContain('◄────►')
 })
+
+test('flowchart: subgraphs get a titled frame, nested ones inside, and frames do not overlap', () => {
+  for (const dir of ['LR', 'TD']) {
+    const art = renderMermaid(
+      `flowchart ${dir}\n  subgraph main [main thread]\n    a --> b\n    subgraph inner [Inner]\n      c\n    end\n    b --> c\n  end\n  subgraph vlm [VLM]\n    d --> e\n  end\n  b --> d\n  x --> a`,
+      300,
+    )!.plain
+    expect(art).toContain('╭─ main thread ')
+    expect(art).toContain('╭─ Inner ')
+    expect(art).toContain('╭─ VLM ')
+    const rows = art.split('\n')
+    const find = (t: string) => {
+      const y = rows.findIndex(r => r.includes(t))
+      return { y, x: [...rows[y].slice(0, rows[y].indexOf(t))].length }
+    }
+    const main = find('╭─ main thread ')
+    const inner = find('╭─ Inner ')
+    // the inner frame starts below and right of the outer one
+    expect(inner.y).toBeGreaterThan(main.y)
+    expect(inner.x).toBeGreaterThan(main.x)
+  }
+  // no subgraph: the drawing is the same as before
+  expect(renderMermaid('flowchart LR\n  a --> b', 100)!.plain).not.toContain('╭─')
+})

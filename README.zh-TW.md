@@ -236,7 +236,7 @@ timeline
 
 | 類型 | 會畫出什麼 |
 | --- | --- |
-| `flowchart` / `graph` | `LR`、`TD` 兩種方向，節點形狀、箭頭標籤、虛線和粗線 |
+| `flowchart` / `graph` | `LR`、`TD` 兩種方向，節點形狀、箭頭標籤、虛線和粗線，`subgraph` 外框和名字（框裡面還能再有框） |
 | `sequenceDiagram` | participant、actor、別名、`autonumber`、note、`loop` / `alt` / `opt` 區塊、自己呼叫自己 |
 | `stateDiagram-v2` | `[*]` 起點和終點、轉換標籤、`<<choice>>`，用流程圖的方式排 |
 | `gantt` | section、`done` / `active` / `crit` / `milestone`、`after id`、天數、日期或 `dateFormat X` |
