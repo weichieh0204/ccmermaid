@@ -234,11 +234,13 @@ export async function copyPng($: EngineInterface, copier: Copier, art: Art): Pro
     const r = await $.process.run(['osascript', '-l', 'JavaScript', copier.script], { stdin: asciiJson(pic), timeoutMs: 60000 })
     return r.exitCode === 0 ? null : firstLine(r)
   }
-  const base = `/tmp/ccmermaid-${Date.now()}`
-  const svg = `${base}.svg`
-  const png = `${base}.png`
-  await $.fs.write(svg, pictureToSvg(pic))
+  // a private folder with a random name (mktemp makes it owner-only), so no one can plant a link at the path
+  const dir = await ok($, ['mktemp', '-d', '-t', 'ccmermaid.XXXXXXXXXX'])
+  if (!dir) return 'mktemp failed'
+  const svg = `${dir}/diagram.svg`
+  const png = `${dir}/diagram.png`
   try {
+    await $.fs.write(svg, pictureToSvg(pic))
     const conv = await $.process.run(convertArgv(copier.convert, svg, png), { timeoutMs: 60000 })
     if (conv.exitCode !== 0) return firstLine(conv)
     // both tools read the whole file, then keep serving the clipboard from a background process,
@@ -250,6 +252,6 @@ export async function copyPng($: EngineInterface, copier: Copier, art: Art): Pro
     const r = await $.process.run(['sh', '-c', clip, 'sh', png], { timeoutMs: 20000 })
     return r.exitCode === 0 ? null : `${copier.clip} exit ${r.exitCode}`
   } finally {
-    await ok($, ['rm', '-f', svg, png])
+    await ok($, ['rm', '-rf', '--', dir])
   }
 }
