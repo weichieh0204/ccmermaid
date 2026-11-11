@@ -1,7 +1,7 @@
 import type { EngineInterface, Register, RenderSurface } from 'claude-code'
 
 import type { Art } from './common'
-import { copyPng, findPowerShell } from './png'
+import { copyPng, findCopier } from './png'
 import { renderMermaid, splitMermaid } from './render'
 
 async function copy($: EngineInterface, surface: RenderSurface, text: string, what: string) {
@@ -9,14 +9,14 @@ async function copy($: EngineInterface, surface: RenderSurface, text: string, wh
   $.ui.toast(res.isCopied ? `Copied ${what}` : `Copy failed (${res.reason})`)
 }
 
-// The PNG button needs Windows PowerShell. Looked up once per load, in the background.
-let powerShell: Awaited<ReturnType<typeof findPowerShell>> = null
+// The PNG button needs a way to draw and copy an image on this machine. Looked up once per load, in the background.
+let copier: Awaited<ReturnType<typeof findCopier>> = null
 
 async function copyImage($: EngineInterface, art: Art) {
-  if (!powerShell) return
+  if (!copier) return
   $.ui.toast('Copying diagram image…')
   try {
-    const error = await copyPng($, powerShell, art)
+    const error = await copyPng($, copier, art)
     $.ui.toast(error ? `Image copy failed (${error})` : 'Copied diagram image')
   } catch (err) {
     $.ui.toast(`Image copy failed (${err instanceof Error ? err.message : String(err)})`)
@@ -26,8 +26,8 @@ async function copyImage($: EngineInterface, art: Art) {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const started = await next(e)
-    void findPowerShell($).then(found => {
-      powerShell = found
+    void findCopier($).then(found => {
+      copier = found
       if (found) $.ui.invalidate('ui.render')
     })
     return started
@@ -83,7 +83,7 @@ export const register: Register = on => {
                 onPress={press => copy($, press.surface, art.plain, 'diagram art')}
               />
             ) : null}
-            {art && powerShell && e.surface === 'terminal' ? (
+            {art && copier && e.surface === 'terminal' ? (
               <Button key={`png-${i}`} plain dimColor label="⧉ png" onPress={() => copyImage($, art)} />
             ) : null}
           </Box>

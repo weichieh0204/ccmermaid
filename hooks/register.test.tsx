@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { artToPicture, asciiJson } from './png'
+import { artToPicture, asciiJson, pictureToSvg } from './png'
 import { renderMermaid } from './render'
 
 const TEXT = '說明如下：\n\n```mermaid\ngraph LR\n  input --> parse[parse] --> D{valid?}\n  D -- yes --> out\n```\n\n結束。'
@@ -243,4 +243,15 @@ test('flowchart: subgraphs get a titled frame, nested ones inside, and frames do
   }
   // no subgraph: the drawing is the same as before
   expect(renderMermaid('flowchart LR\n  a --> b', 100)!.plain).not.toContain('╭─')
+})
+
+test('png on Linux: the picture becomes an SVG with lines, a CJK font for wide characters, escaped text', () => {
+  const svg = pictureToSvg(
+    artToPicture({ lines: [[{ text: '┌─┐ <a&b> 測', color: '#89b4fa' }]], plain: '', width: 12 }),
+  )
+  expect(svg.startsWith('<svg')).toBe(true)
+  expect(svg).toContain('<line')
+  expect(svg).toContain('&lt;')
+  expect(svg).toContain('&amp;')
+  expect(svg).toMatch(/font-family="[^"]*Noto Sans CJK[^"]*">測</)
 })

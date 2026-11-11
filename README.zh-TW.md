@@ -19,7 +19,7 @@
 Claude 寫出 `mermaid` 程式碼區塊時，Claude Code 原本只會顯示程式碼。ccmermaid 會解析它，改成畫出方框、箭頭和顏色，全部用一般字元組成，一眼就看得懂，而且還是文字。
 
 - **8 種圖：** flowchart、sequenceDiagram、stateDiagram-v2、gantt、gitGraph、pie、mindmap、timeline。
-- **複製按鈕：** 每張圖都有，可以複製原始碼、文字圖，Windows 上還能複製成 PNG 圖片（見[複製按鈕](#複製按鈕)）。
+- **複製按鈕：** 每張圖都有，可以複製原始碼、文字圖，還能複製成 PNG 圖片（見[複製按鈕](#複製按鈕)）。
 - **看不懂就不動：** 解析不了的圖會照原樣顯示成程式碼區塊，內容不會不見。
 - **其他都不變：** 沒有 mermaid 的回覆，照 Claude Code 原本的方式顯示。
 
@@ -49,7 +49,7 @@ claude plugin install ccmermaid --marketplace weichieh0204/ccmermaid
 | --- | --- | --- |
 | **⧉&nbsp;source** | 原本的 mermaid 程式碼 | 貼到 GitHub、文件，或 [Mermaid Live Editor](https://mermaid.live) 產生正式的圖 |
 | **⧉&nbsp;art** | 畫好的純文字圖（沒有顏色） | 貼到 commit 訊息、程式註解、聊天訊息或任何純文字檔（要用等寬字型才會對齊） |
-| **⧉&nbsp;png** | 畫好的圖，存成 PNG 圖片，有顏色，線條是真的線 | 貼到投影片、文件、聊天訊息，文字版在這些地方會跑版。只有 Windows 和 WSL 能用：它靠 Windows PowerShell 畫圖，其他平台不會顯示這個按鈕 |
+| **⧉&nbsp;png** | 畫好的圖，存成 PNG 圖片，有顏色，線條是真的線 | 貼到投影片、文件、聊天訊息，文字版在這些地方會跑版。Windows 和 WSL 用 Windows PowerShell 畫圖，macOS 用內建的 `osascript`，Linux 要有 `rsvg-convert`、ImageMagick、`cairosvg` 或 Inkscape 其中一個，再加上 `wl-copy` 或 `xclip`。都找不到時不會顯示這個按鈕 |
 
 ## 範例
 
@@ -260,7 +260,7 @@ timeline
 | 檔案 | 負責 |
 | --- | --- |
 | `register.tsx` | `ui.render` hook，把程式碼區塊換成畫好的圖，還有複製按鈕 |
-| `png.ts`、`clip_png.ps1` | 複製 PNG：把圖整理成一格一格，交給 Windows PowerShell 畫好放進剪貼簿 |
+| `png.ts`、`clip_png.ps1`、`clip_png_mac.js` | 複製 PNG：把圖整理成一格一格，Windows 交給 PowerShell、macOS 交給 AppKit 畫，Linux 先做成 SVG 再轉成 PNG，最後放進剪貼簿 |
 | `render.ts` | 找出回覆裡的 mermaid 區塊，看是哪種圖，交給對應的檔 |
 | `common.ts` | 大家共用的：字寬、顏色、小的文字工具 |
 | `diagrams/<類型>.ts` | 每種圖一個：`flowchart`、`state`、`sequence`、`gantt`、`gitgraph`、`pie`、`mindmap`、`timeline` |
