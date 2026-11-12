@@ -336,6 +336,8 @@ type Link = {
   v: LNode
   style: LineStyle
   label: string
+  // the label of the whole edge, also on the pieces of a long edge that do not draw it
+  edgeLabel: string
   arrowU: boolean
   arrowV: boolean
   isFirst: boolean
@@ -490,6 +492,7 @@ function buildLayers(g: Graph, maxLabel: number): Layout & { chains: LNode[][] }
         v: chain[c + 1],
         style: d.style,
         label: c + 2 === chain.length ? d.label : '',
+        edgeLabel: d.label,
         arrowU: c === 0 && d.arrowU,
         arrowV: c + 2 === chain.length && d.arrowV,
         isFirst: c === 0,
@@ -1096,11 +1099,33 @@ function renderLR(g: Graph, maxLabel: number): Art {
   const fr = frameRows(fs)
 
   const colW = layers.map(ly => Math.max(1, ...ly.filter(n => n.real).map(n => n.w)))
+  // a label sits on its target row, so two different labels into one box would write over each
+  // other. Those go on their source row instead, when every line leaving that row has the same label.
+  const rowOf = (n: LNode) => (n.real ? cy(n) : n.y)
+  const outLabels = new Map<LNode, Set<string>>()
+  const inLabels = new Map<LNode, Set<string>>()
+  for (const l of links) {
+    outLabels.set(l.u, (outLabels.get(l.u) ?? new Set()).add(l.edgeLabel))
+    if (l.label) inLabels.set(l.v, (inLabels.get(l.v) ?? new Set()).add(l.label))
+  }
+  const onSource = new Set(links.filter(l => l.label && inLabels.get(l.v)!.size > 1 && outLabels.get(l.u)!.size === 1))
+  // lines into different boxes get their own vertical column, so a line never seems to reach a box
+  // it does not go to. Lines into one box share its column. The lowest box takes the leftmost column.
+  const colIdx = new Map<LNode, number>()
+  const nCols = layers.map(() => 1)
+  layers.forEach((_, L) => {
+    const turning = links.filter(l => l.u.layer === L && rowOf(l.u) !== rowOf(l.v)).map(l => l.v)
+    const targets = [...new Set(turning)].sort((a, b) => rowOf(b) - rowOf(a))
+    targets.forEach((v, i) => colIdx.set(v, 2 * i))
+    nCols[L] = Math.max(1, 2 * targets.length - 1)
+  })
   const labelW = layers.map(() => 0)
+  const preW = layers.map(() => 0)
   for (const l of links)
     if (l.label) {
       const L = l.u.layer
-      labelW[L] = Math.max(labelW[L], strWidth(l.label))
+      if (onSource.has(l)) preW[L] = Math.max(preW[L], strWidth(l.label) + 2)
+      else labelW[L] = Math.max(labelW[L], strWidth(l.label))
     }
   const boxBelow = (n: LNode) => layers[n.layer].some(o => o.real && o.y > n.y)
   // layers where a back edge has to step around a box get a free column for it
@@ -1120,7 +1145,7 @@ function renderLR(g: Graph, maxLabel: number): Art {
       exitCols[L] = Math.max(1, ...fs.filter(f => f.maxL === L).map(f => rightOff(f) + 1))
       gapW[L] =
         L + 1 < layers.length
-          ? exitCols[L] + channel[L] + 1 + (labelW[L] ? labelW[L] + 4 : 4) + fr.starts(L + 1)
+          ? exitCols[L] + preW[L] + channel[L] + nCols[L] + (labelW[L] ? labelW[L] + 4 : 4) + fr.starts(L + 1)
           : channel[L]
     })
     let x = fr.starts(0) ? fr.starts(0) + 1 : 0
@@ -1153,7 +1178,8 @@ function renderLR(g: Graph, maxLabel: number): Art {
   for (const l of links) {
     const L = l.u.layer
     const gLeft = colX[L] + colW[L]
-    const gMid = gLeft + exitCols[L] + channel[L]
+    const gBase = gLeft + exitCols[L] + preW[L] + channel[L]
+    const gMid = gBase + (colIdx.get(l.v) ?? 0)
     const arrowCol = gLeft + gapW[L] - 1
     const sy = l.u.real ? cy(l.u) : l.u.y
     const ty = l.v.real ? cy(l.v) : l.v.y
@@ -1165,7 +1191,10 @@ function renderLR(g: Graph, maxLabel: number): Art {
     if (l.u.real && !l.arrowU) marks.push([l.u.x + l.u.w - 1, sy, 'exitR'])
     if (l.arrowV) marks.push([arrowCol, ty, '►', ARROW_COLOR])
     if (l.arrowU) marks.push([sx, sy, '◄', ARROW_COLOR])
-    if (l.label) {
+    if (l.label && onSource.has(l)) {
+      const lw = strWidth(l.label)
+      marks.push([sx + 1 + Math.max(0, Math.floor((gBase - sx - 1 - lw) / 2)), sy, l.label, LABEL_COLOR])
+    } else if (l.label) {
       const lw = strWidth(l.label)
       const span = arrowCol - fr.starts(L + 1) - gMid - 1
       const lx = gMid + 1 + Math.max(0, Math.floor((span - lw) / 2))

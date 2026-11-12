@@ -255,3 +255,23 @@ test('png on Linux: the picture becomes an SVG with lines, a CJK font for wide c
   expect(svg).toContain('&amp;')
   expect(svg).toMatch(/font-family="[^"]*Noto Sans CJK[^"]*">測</)
 })
+
+test('flowchart LR: two different labels into one box both show, each on its own line', () => {
+  const src = 'flowchart LR\n  a --> p\n  b --> q\n  p -->|SAT| k[Kafka]\n  q -->|MQTT| k\n  q -->|MQTT| t[TDOA]'
+  const rows = renderMermaid(src, 200)!.plain.split('\n')
+  const sat = rows.find(r => r.includes('SAT'))!
+  const mqtt = rows.find(r => r.includes('MQTT'))!
+  // each label sits on the row of the box it leaves, not on the shared row into Kafka
+  expect(rows.find(r => r.includes(' p '))).toBe(sat)
+  expect(rows.find(r => r.includes(' q '))).toBe(mqtt)
+  expect(rows.find(r => r.includes('Kafka'))).not.toContain('SAT')
+  expect(rows.find(r => r.includes('Kafka'))).not.toContain('MQTT')
+})
+
+test('flowchart LR: lines into different boxes do not share a vertical column', () => {
+  const src = 'flowchart LR\n  a --> p\n  b --> q\n  p --> k\n  q --> k\n  q --> t'
+  const rows = renderMermaid(src, 200)!.plain.split('\n')
+  // two turning columns in the gap: one for k, one for t
+  const corners = rows.join('').split('').filter(c => '╮╯╰╭'.includes(c)).length
+  expect(corners).toBeGreaterThanOrEqual(2)
+})
