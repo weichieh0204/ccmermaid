@@ -936,8 +936,63 @@ function drawBox(cv: Canvas, n: LNode) {
   }
   n.lines.forEach((ln, j) => {
     const lw = strWidth(ln)
-    cv.text(x + Math.floor((w - lw) / 2), y + 1 + j, ln, color)
+    cv.text(x + Math.floor((w - lw) / 2), y + 1 + Math.floor((h - 2 - n.lines.length) / 2) + j, ln, color)
   })
+}
+
+/** What makes lines into one box look different: label, arrowhead and line style. */
+const kindOf = (l: Link) => `${l.edgeLabel}\u0000${l.arrowV}\u0000${l.style}`
+
+/** Boxes that lines of more than one kind enter: each kind gets its own entry, so lines that
+ *  differ never share the last stretch into the box. */
+function entryKinds(links: Link[]): Map<LNode, string[]> {
+  const m = new Map<LNode, Set<string>>()
+  for (const l of links) if (l.v.real) m.set(l.v, (m.get(l.v) ?? new Set()).add(kindOf(l)))
+  return new Map([...m].filter(([, k]) => k.size > 1).map(([n, k]) => [n, [...k]]))
+}
+
+/** The entry kinds of each box, ordered by where their sources sit (top or left first). */
+function orderKinds(links: Link[], kinds: Map<LNode, string[]>, pos: (n: LNode) => number) {
+  for (const [n, ks] of kinds) {
+    const mean = (k: string) => {
+      const ps = links.filter(l => l.v === n && kindOf(l) === k).map(l => pos(l.u))
+      return ps.reduce((a, b) => a + b, 0) / ps.length
+    }
+    ks.sort((a, b) => mean(a) - mean(b))
+  }
+}
+
+/** Reorders each box's entries: a line whose source already sits on an entry goes straight in,
+ *  and no entry sits on the row (or column) another line of the same gap leaves from. Small boxes
+ *  try every order. `slot(n, i)` is where entry i of box n is, `pos(n)` where a line leaves n. */
+function placeKinds(
+  links: Link[],
+  kinds: Map<LNode, string[]>,
+  pos: (n: LNode) => number,
+  slot: (n: LNode, i: number) => number,
+) {
+  const perms = (a: string[]): string[][] =>
+    a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map(p => [x, ...p]))
+  for (const [n, ks] of kinds) {
+    if (ks.length > 6) continue
+    const into = links.filter(l => l.v === n)
+    const others = links.filter(l => l.u.layer === n.layer - 1 && l.v !== n).map(l => pos(l.u))
+    let best = ks
+    let bestScore = -Infinity
+    for (const p of perms(ks)) {
+      let score = 0
+      p.forEach((k, i) => {
+        const at = slot(n, i)
+        const srcs = into.filter(l => kindOf(l) === k).map(l => pos(l.u))
+        if (srcs.includes(at)) score += 100
+        if (others.includes(at)) score -= 1000
+        // keep the order of the sources, so lines do not cross on the way in
+        score -= srcs.reduce((a, b) => a + Math.abs(b - at), 0) / 100
+      })
+      if (score > bestScore) [best, bestScore] = [p, score]
+    }
+    ks.splice(0, ks.length, ...best)
+  }
 }
 
 function sizeNodes(layers: LNode[][]) {
@@ -954,6 +1009,14 @@ function sizeNodes(layers: LNode[][]) {
 function renderTD(g: Graph, maxLabel: number): Art {
   const { layers, links, chains, backs, clusters } = buildLayers(g, maxLabel)
   sizeNodes(layers)
+  // entries along the top side, far enough apart for the label beside each line
+  const kinds = entryKinds(links)
+  const spacing = new Map<LNode, number>()
+  for (const [n, ks] of kinds) {
+    const lw = Math.max(0, ...links.filter(l => l.v === n && l.label).map(l => strWidth(l.label)))
+    spacing.set(n, Math.max(4, lw + 4))
+    n.w = Math.max(n.w, (ks.length - 1) * spacing.get(n)! + 5)
+  }
   // a label sits to the right of its line, so a wide one needs room past its box
   const labelRoom = new Map<LNode, number>()
   for (const l of links)
@@ -976,6 +1039,21 @@ function renderTD(g: Graph, maxLabel: number): Art {
   const cx = (n: LNode) => n.x + Math.floor(n.w / 2)
   const fs = frames(layers, clusters, n => n.x, n => n.w, true)
   const fr = frameRows(fs)
+  orderKinds(links, kinds, cx)
+  const slotTD = (n: LNode, i: number) =>
+    cx(n) - Math.floor(((kinds.get(n)!.length - 1) * spacing.get(n)!) / 2) + i * spacing.get(n)!
+  placeKinds(links, kinds, n => (n.real ? cx(n) : n.x), slotTD)
+  const colOf = (l: Link): number => (kinds.has(l.v) ? slotTD(l.v, kinds.get(l.v)!.indexOf(kindOf(l))) : cx(l.v))
+  // lines into different entries get their own turning row, so a line never seems to reach a box
+  // it does not go to. The rightmost entry takes the top row.
+  const rowIdx = new Map<Link, number>()
+  const nRows = layers.map(() => 1)
+  layers.forEach((_, L) => {
+    const turning = links.filter(l => l.u.layer === L && cx(l.u) !== colOf(l))
+    const entries = [...new Set(turning.map(colOf))].sort((a, b) => b - a)
+    for (const l of turning) rowIdx.set(l, entries.indexOf(colOf(l)))
+    nRows[L] = Math.max(1, entries.length)
+  })
 
   // rows in the gap under layer L: the exit row(s), where frames ending at L close (inner first),
   // the row the edges turn on, the top sides of frames starting at L + 1 (outer first),
@@ -985,7 +1063,7 @@ function renderTD(g: Graph, maxLabel: number): Art {
   for (const l of links) if (l.label) labeledInto[l.v.layer] = true
   const exitRows = layers.map((_, L) => (fr.ends(L) ? fr.ends(L) + 1 : 1))
   const gapH = layers.map((_, L) =>
-    L + 1 < layers.length ? exitRows[L] + 1 + fr.starts(L + 1) + (labeledInto[L + 1] ? 1 : 0) + 1 : 0,
+    L + 1 < layers.length ? exitRows[L] + nRows[L] + fr.starts(L + 1) + (labeledInto[L + 1] ? 1 : 0) + 1 : 0,
   )
   const bandTop: number[] = []
   let y = fr.starts(0) ? fr.starts(0) + 1 : 0
@@ -1012,10 +1090,10 @@ function renderTD(g: Graph, maxLabel: number): Art {
   for (const l of links) {
     const L = l.u.layer
     const gTop = bandTop[L] + bandH[L]
-    const gMid = gTop + exitRows[L]
+    const gMid = gTop + exitRows[L] + (rowIdx.get(l) ?? 0)
     const arrowRow = gTop + gapH[L] - 1
     const sx = cx(l.u)
-    const tx = cx(l.v)
+    const tx = colOf(l)
     const sy = l.u.real ? l.u.y + l.u.h - 1 : gTop - 1
     const st = l.style
     cv.vseg(sx, sy, gMid, st)
@@ -1083,6 +1161,9 @@ function renderTD(g: Graph, maxLabel: number): Art {
 function renderLR(g: Graph, maxLabel: number): Art {
   const { layers, links, chains, backs, clusters } = buildLayers(g, maxLabel)
   sizeNodes(layers)
+  // entries down the left side, one row each
+  const kinds = entryKinds(links)
+  for (const [n, ks] of kinds) n.h = Math.max(n.h, ks.length + 2)
   placeAxis(
     layers,
     links,
@@ -1099,33 +1180,26 @@ function renderLR(g: Graph, maxLabel: number): Art {
   const fr = frameRows(fs)
 
   const colW = layers.map(ly => Math.max(1, ...ly.filter(n => n.real).map(n => n.w)))
-  // a label sits on its target row, so two different labels into one box would write over each
-  // other. Those go on their source row instead, when every line leaving that row has the same label.
   const rowOf = (n: LNode) => (n.real ? cy(n) : n.y)
-  const outLabels = new Map<LNode, Set<string>>()
-  const inLabels = new Map<LNode, Set<string>>()
-  for (const l of links) {
-    outLabels.set(l.u, (outLabels.get(l.u) ?? new Set()).add(l.edgeLabel))
-    if (l.label) inLabels.set(l.v, (inLabels.get(l.v) ?? new Set()).add(l.label))
-  }
-  const onSource = new Set(links.filter(l => l.label && inLabels.get(l.v)!.size > 1 && outLabels.get(l.u)!.size === 1))
-  // lines into different boxes get their own vertical column, so a line never seems to reach a box
-  // it does not go to. Lines into one box share its column. The lowest box takes the leftmost column.
-  const colIdx = new Map<LNode, number>()
+  orderKinds(links, kinds, rowOf)
+  const slotLR = (n: LNode, i: number) => n.y + 1 + Math.floor((n.h - 2 - kinds.get(n)!.length) / 2) + i
+  placeKinds(links, kinds, rowOf, slotLR)
+  const entryRow = (l: Link): number => (kinds.has(l.v) ? slotLR(l.v, kinds.get(l.v)!.indexOf(kindOf(l))) : rowOf(l.v))
+  // lines into different entries get their own vertical column, so a line never seems to reach a
+  // box it does not go to. Lines into one entry share its column. The lowest entry is leftmost.
+  const colIdx = new Map<Link, number>()
   const nCols = layers.map(() => 1)
   layers.forEach((_, L) => {
-    const turning = links.filter(l => l.u.layer === L && rowOf(l.u) !== rowOf(l.v)).map(l => l.v)
-    const targets = [...new Set(turning)].sort((a, b) => rowOf(b) - rowOf(a))
-    targets.forEach((v, i) => colIdx.set(v, 2 * i))
-    nCols[L] = Math.max(1, 2 * targets.length - 1)
+    const turning = links.filter(l => l.u.layer === L && rowOf(l.u) !== entryRow(l))
+    const entries = [...new Set(turning.map(entryRow))].sort((a, b) => b - a)
+    for (const l of turning) colIdx.set(l, 2 * entries.indexOf(entryRow(l)))
+    nCols[L] = Math.max(1, 2 * entries.length - 1)
   })
   const labelW = layers.map(() => 0)
-  const preW = layers.map(() => 0)
   for (const l of links)
     if (l.label) {
       const L = l.u.layer
-      if (onSource.has(l)) preW[L] = Math.max(preW[L], strWidth(l.label) + 2)
-      else labelW[L] = Math.max(labelW[L], strWidth(l.label))
+      labelW[L] = Math.max(labelW[L], strWidth(l.label))
     }
   const boxBelow = (n: LNode) => layers[n.layer].some(o => o.real && o.y > n.y)
   // layers where a back edge has to step around a box get a free column for it
@@ -1145,7 +1219,7 @@ function renderLR(g: Graph, maxLabel: number): Art {
       exitCols[L] = Math.max(1, ...fs.filter(f => f.maxL === L).map(f => rightOff(f) + 1))
       gapW[L] =
         L + 1 < layers.length
-          ? exitCols[L] + preW[L] + channel[L] + nCols[L] + (labelW[L] ? labelW[L] + 4 : 4) + fr.starts(L + 1)
+          ? exitCols[L] + channel[L] + nCols[L] + (labelW[L] ? labelW[L] + 4 : 4) + fr.starts(L + 1)
           : channel[L]
     })
     let x = fr.starts(0) ? fr.starts(0) + 1 : 0
@@ -1178,11 +1252,10 @@ function renderLR(g: Graph, maxLabel: number): Art {
   for (const l of links) {
     const L = l.u.layer
     const gLeft = colX[L] + colW[L]
-    const gBase = gLeft + exitCols[L] + preW[L] + channel[L]
-    const gMid = gBase + (colIdx.get(l.v) ?? 0)
+    const gMid = gLeft + exitCols[L] + channel[L] + (colIdx.get(l) ?? 0)
     const arrowCol = gLeft + gapW[L] - 1
     const sy = l.u.real ? cy(l.u) : l.u.y
-    const ty = l.v.real ? cy(l.v) : l.v.y
+    const ty = entryRow(l)
     const sx = l.u.real ? l.u.x + l.u.w : gLeft - 1
     const st = l.style
     cv.hseg(sy, sx, gMid, st)
@@ -1191,10 +1264,7 @@ function renderLR(g: Graph, maxLabel: number): Art {
     if (l.u.real && !l.arrowU) marks.push([l.u.x + l.u.w - 1, sy, 'exitR'])
     if (l.arrowV) marks.push([arrowCol, ty, '►', ARROW_COLOR])
     if (l.arrowU) marks.push([sx, sy, '◄', ARROW_COLOR])
-    if (l.label && onSource.has(l)) {
-      const lw = strWidth(l.label)
-      marks.push([sx + 1 + Math.max(0, Math.floor((gBase - sx - 1 - lw) / 2)), sy, l.label, LABEL_COLOR])
-    } else if (l.label) {
+    if (l.label) {
       const lw = strWidth(l.label)
       const span = arrowCol - fr.starts(L + 1) - gMid - 1
       const lx = gMid + 1 + Math.max(0, Math.floor((span - lw) / 2))
